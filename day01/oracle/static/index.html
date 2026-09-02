@@ -240,11 +240,17 @@ const ball = $("#ball");
 
 // One session id per browser tab, kept across reloads in sessionStorage. The server keys
 // chat memory on it, so a reload shows an empty log while the Oracle still remembers you.
+// crypto.randomUUID only exists on "secure" origins (https, localhost, 127.0.0.1). Opening the
+// page as http://0.0.0.0:8000 or over a LAN address is not secure, so fall back to Math.random.
+function newId() {
+  if (window.crypto && typeof crypto.randomUUID === "function") return crypto.randomUUID();
+  return "s-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 10);
+}
 let sessionId;
 try {
   sessionId = sessionStorage.getItem("oracle-session");
-  if (!sessionId) { sessionId = crypto.randomUUID(); sessionStorage.setItem("oracle-session", sessionId); }
-} catch (e) { sessionId = crypto.randomUUID(); }
+  if (!sessionId) { sessionId = newId(); sessionStorage.setItem("oracle-session", sessionId); }
+} catch (e) { sessionId = newId(); }
 $("#session-id").textContent = sessionId.slice(0, 8);
 
 async function api(path, options) {
