@@ -1,0 +1,392 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light only">
+<title>Docker, in plain English</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400;1,8..60,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    color-scheme: light only;
+    --paper: #fbf8f1; --panel: #f3eee2; --ink: #1d1a17; --muted: #6b645a; --rule: #ddd6c8;
+    --accent: #1f4e79; --accent-soft: #e4edf6; --warm: #b8562a; --warm-soft: #f6e6dc; --code-bg: #1d1a17;
+    --serif: "Source Serif 4", "Iowan Old Style", Charter, Georgia, serif;
+    --mono: "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--serif); font-size: 18px; line-height: 1.6; }
+  a { color: var(--accent); }
+
+  /* ---------- masthead ---------- */
+  .mast { max-width: 880px; margin: 0 auto; padding: 56px 24px 20px; border-bottom: 2px solid var(--ink); }
+  .eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin: 0 0 14px; }
+  h1 { margin: 0 0 12px; font-size: clamp(38px, 6vw, 56px); line-height: 1.02; font-weight: 600; letter-spacing: -.015em; }
+  .sub { margin: 0; font-size: 21px; font-style: italic; color: var(--muted); max-width: 34ch; line-height: 1.4; }
+  .toc { max-width: 880px; margin: 0 auto; padding: 18px 24px 0; display: flex; flex-wrap: wrap; gap: 8px 22px; font-family: var(--mono); font-size: 12.5px; }
+  .toc a { color: var(--muted); text-decoration: none; border-bottom: 1px solid var(--rule); padding-bottom: 1px; }
+  .toc a:hover { color: var(--accent); border-color: var(--accent); }
+
+  /* ---------- body ---------- */
+  main { max-width: 880px; margin: 0 auto; padding: 24px 24px 96px; }
+  section { padding: 44px 0 8px; border-top: 1px solid var(--rule); margin-top: 40px; }
+  section:first-of-type { border-top: 0; margin-top: 0; }
+  h2 { font-size: 30px; line-height: 1.15; font-weight: 600; margin: 0 0 18px; letter-spacing: -.01em; }
+  h2 small { display: block; font-family: var(--mono); font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); margin-bottom: 8px; font-weight: 500; }
+  p { margin: 0 0 18px; max-width: 68ch; }
+  ul { margin: 0 0 18px; padding-left: 22px; max-width: 68ch; } li { margin-bottom: 10px; }
+  li::marker { color: var(--accent); }
+  code { font-family: var(--mono); font-size: .86em; background: var(--panel); padding: 1px 6px; border-radius: 4px; }
+  .callout { background: var(--accent-soft); border-left: 4px solid var(--accent); padding: 16px 20px; margin: 24px 0; max-width: 72ch; border-radius: 0 8px 8px 0; }
+  .callout b { color: var(--accent); }
+  .callout p:last-child { margin: 0; }
+  .remember { background: var(--ink); color: var(--paper); padding: 28px 30px; border-radius: 12px; font-size: 24px; line-height: 1.35; font-style: italic; margin: 32px 0 0; }
+  .remember b { color: #f3c988; font-style: normal; }
+
+  /* ---------- figures ---------- */
+  figure { margin: 26px 0 30px; }
+  figure svg { display: block; width: 100%; height: auto; max-width: 880px; }
+  figcaption { font-family: var(--mono); font-size: 12.5px; color: var(--muted); margin-top: 10px; line-height: 1.5; }
+  figcaption b { color: var(--ink); font-weight: 500; }
+  svg text { font-family: var(--serif); font-size: 15px; fill: var(--ink); }
+  svg .m { font-family: var(--mono); font-size: 12.5px; }
+  svg .s { font-size: 12.5px; fill: var(--muted); }
+  svg .box { fill: #fff; stroke: var(--ink); stroke-width: 1.5; }
+  svg .soft { fill: var(--panel); stroke: var(--rule); stroke-width: 1.5; }
+  svg .hi { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.8; }
+  svg .warm { fill: var(--warm-soft); stroke: var(--warm); stroke-width: 1.8; }
+  svg .ln { stroke: var(--ink); stroke-width: 1.5; fill: none; }
+  svg .ln.a { stroke: var(--accent); stroke-width: 2; }
+  svg .ln.w { stroke: var(--warm); stroke-width: 2; }
+  svg .dash { stroke-dasharray: 5 5; }
+  svg .lab { font-family: var(--mono); font-size: 12px; fill: var(--accent); }
+  svg .lab.w { fill: var(--warm); }
+
+  /* ---------- glossary ---------- */
+  .words { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 8px 0 18px; }
+  @media (max-width: 720px) { .words { grid-template-columns: 1fr; } }
+  .word { background: #fff; border: 1px solid var(--rule); border-radius: 10px; padding: 16px 18px; }
+  .word dt { font-family: var(--mono); font-size: 15px; color: var(--accent); font-weight: 500; margin-bottom: 6px; }
+  .word dd { margin: 0; font-size: 16.5px; line-height: 1.5; }
+
+  /* ---------- dockerfile ---------- */
+  pre { margin: 0; background: var(--code-bg); color: #f1ebe0; font-family: var(--mono); font-size: 14px; line-height: 1.6; padding: 18px 20px; border-radius: 10px; white-space: pre; overflow-x: auto; }
+  pre .c { color: #a39a88; }
+  pre .n { display: inline-block; width: 26px; color: #6f675b; user-select: none; }
+  pre .hl { background: rgba(31,78,121,.45); display: inline-block; width: 100%; }
+  .steps { list-style: none; padding: 0; margin: 22px 0 0; max-width: none; }
+  .steps li { display: grid; grid-template-columns: 54px 1fr; gap: 14px; padding: 14px 0; border-top: 1px solid var(--rule); margin: 0; align-items: start; }
+  .steps .ln-no { font-family: var(--mono); font-size: 13px; color: var(--accent); background: var(--accent-soft); border-radius: 6px; padding: 5px 0; text-align: center; margin-top: 2px; }
+  .steps p { margin: 0; max-width: none; }
+  .cmds { display: grid; grid-template-columns: 1fr; gap: 12px; margin: 8px 0 20px; }
+  .cmd { display: grid; grid-template-columns: 1fr 240px; gap: 18px; align-items: center; background: #fff; border: 1px solid var(--rule); border-radius: 10px; padding: 12px 16px; }
+  .cmd pre { padding: 10px 14px; font-size: 13.5px; }
+  .cmd .why { font-size: 16px; line-height: 1.45; }
+  .cmd .why b { font-family: var(--mono); font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--accent); display: block; margin-bottom: 2px; }
+  @media (max-width: 720px) { .cmd { grid-template-columns: 1fr; } }
+  .mistakes { list-style: none; padding: 0; max-width: none; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 720px) { .mistakes { grid-template-columns: 1fr; } }
+  .mistakes li { background: var(--warm-soft); border-left: 4px solid var(--warm); border-radius: 0 8px 8px 0; padding: 12px 16px; margin: 0; font-size: 16.5px; line-height: 1.5; }
+  @media print { .toc { display: none; } section { break-inside: avoid; } }
+</style>
+</head>
+<body>
+
+<header class="mast">
+  <p class="eyebrow">Day 1 · DevOps &amp; MLOps for ML engineers · handout</p>
+  <h1>Docker, in plain English</h1>
+  <p class="sub">How we get the Oracle off your laptop and onto a machine you have never touched.</p>
+</header>
+<nav class="toc" aria-label="Sections">
+  <a href="#problem">The problem</a><a href="#container">What a container is</a><a href="#words">Six words</a>
+  <a href="#outside">What stays outside</a><a href="#dockerfile">The Dockerfile</a><a href="#commands">Build, run, ship</a>
+  <a href="#compose">Compose</a><a href="#mistakes">Mistakes</a>
+</nav>
+
+<main>
+
+<section id="problem">
+  <h2><small>01</small>The problem we are solving</h2>
+  <p>The Oracle runs on your laptop because your laptop has everything it needs: Python 3.12, about forty packages at exact versions, two model files, a <code>.env</code> file, and a free port 8000. A rented cloud machine has none of that. You could install it all by hand, but you would do it again on every machine and after every change, and one day you would miss a step, load a different scikit-learn, and get different answers. "Works on my machine" is the default state of software.</p>
+
+  <figure>
+    <svg viewBox="0 0 880 250" role="img" aria-label="Your laptop holds five things the Oracle needs. A rented machine holds none of them. Docker packs the five into one image that moves across.">
+      <defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
+      <!-- laptop -->
+      <rect x="20" y="30" width="300" height="190" rx="12" class="box"/>
+      <text x="170" y="58" text-anchor="middle" font-weight="600">Your laptop</text>
+      <g class="m">
+        <rect x="40" y="76" width="260" height="24" rx="5" class="soft"/><text x="52" y="93">Python 3.12</text>
+        <rect x="40" y="106" width="260" height="24" rx="5" class="soft"/><text x="52" y="123">~40 packages, exact versions</text>
+        <rect x="40" y="136" width="260" height="24" rx="5" class="soft"/><text x="52" y="153">2 model files</text>
+        <rect x="40" y="166" width="125" height="24" rx="5" class="warm"/><text x="52" y="183">.env (key)</text>
+        <rect x="175" y="166" width="125" height="24" rx="5" class="warm"/><text x="187" y="183">port 8000</text>
+      </g>
+      <!-- image in the middle -->
+      <rect x="380" y="86" width="120" height="78" rx="10" class="hi"/>
+      <text x="440" y="118" text-anchor="middle" font-weight="600">one image</text>
+      <text x="440" y="140" text-anchor="middle" class="s">same everywhere</text>
+      <!-- cloud machine -->
+      <rect x="560" y="30" width="300" height="190" rx="12" class="box" stroke-dasharray="6 5"/>
+      <text x="710" y="58" text-anchor="middle" font-weight="600">A rented machine</text>
+      <text x="710" y="135" text-anchor="middle" font-size="40" fill="#c9c1b1">?</text>
+      <text x="710" y="190" text-anchor="middle" class="s">nothing installed, nothing configured</text>
+      <!-- arrows -->
+      <path d="M320 125 L378 125" class="ln a" marker-end="url(#ar)" style="color:#1f4e79"/>
+      <text x="349" y="112" text-anchor="middle" class="lab">build</text>
+      <path d="M500 125 L558 125" class="ln a" marker-end="url(#ar)" style="color:#1f4e79"/>
+      <text x="529" y="112" text-anchor="middle" class="lab">run</text>
+      <text x="440" y="236" text-anchor="middle" class="s">the two orange items are handed in at run time, not packed (see 04)</text>
+    </svg>
+    <figcaption><b>Figure 1.</b> Everything the Oracle depends on lives on one laptop. Docker packs the parts that are the same everywhere into an image and moves that instead of a list of instructions.</figcaption>
+  </figure>
+
+  <p>Docker fixes this by letting you describe the whole environment in a text file, build it once into a single package, and run that identical package anywhere.</p>
+</section>
+
+<section id="container">
+  <h2><small>02</small>What a container actually is</h2>
+  <p>A container is an ordinary process on a Linux machine that has been given its own private view of the filesystem, its own network, and its own process list. From the inside it looks like a small dedicated computer. From the outside it is just a process, which is why it starts in a second and twenty fit on one box.</p>
+  <p>It is <em>not</em> a virtual machine. A VM boots a whole operating system with its own kernel; a container borrows the host's kernel and only carries the files on top. Think shipping container: a standard box any crane, truck, or ship can move without caring what is inside.</p>
+
+  <figure>
+    <svg viewBox="0 0 880 300" role="img" aria-label="Virtual machines each boot a full guest operating system on a hypervisor. Containers share the host kernel and only carry their own files and process.">
+      <!-- VM side -->
+      <text x="200" y="26" text-anchor="middle" font-weight="600">Virtual machines</text>
+      <rect x="40" y="240" width="320" height="34" rx="6" class="soft"/><text x="200" y="262" text-anchor="middle" class="m">hardware</text>
+      <rect x="40" y="200" width="320" height="34" rx="6" class="soft"/><text x="200" y="222" text-anchor="middle" class="m">host OS + hypervisor</text>
+      <g>
+        <rect x="40" y="90" width="100" height="104" rx="6" class="box"/>
+        <rect x="150" y="90" width="100" height="104" rx="6" class="box"/>
+        <rect x="260" y="90" width="100" height="104" rx="6" class="box"/>
+        <g class="m" text-anchor="middle">
+          <text x="90" y="112">app A</text><text x="200" y="112">app B</text><text x="310" y="112">app C</text>
+          <text x="90" y="146">guest OS</text><text x="200" y="146">guest OS</text><text x="310" y="146">guest OS</text>
+          <text x="90" y="166">own kernel</text><text x="200" y="166">own kernel</text><text x="310" y="166">own kernel</text>
+        </g>
+      </g>
+      <text x="200" y="62" text-anchor="middle" class="s">boots a whole OS each · minutes · gigabytes</text>
+      <!-- divider -->
+      <line x1="440" y1="20" x2="440" y2="280" class="ln dash" stroke="#ddd6c8"/>
+      <!-- container side -->
+      <text x="680" y="26" text-anchor="middle" font-weight="600">Containers</text>
+      <rect x="520" y="240" width="320" height="34" rx="6" class="soft"/><text x="680" y="262" text-anchor="middle" class="m">hardware</text>
+      <rect x="520" y="200" width="320" height="34" rx="6" class="hi"/><text x="680" y="222" text-anchor="middle" class="m">host OS · one shared kernel</text>
+      <g>
+        <rect x="520" y="130" width="100" height="64" rx="6" class="box"/>
+        <rect x="630" y="130" width="100" height="64" rx="6" class="box"/>
+        <rect x="740" y="130" width="100" height="64" rx="6" class="box"/>
+        <g class="m" text-anchor="middle">
+          <text x="570" y="152">app A</text><text x="680" y="152">app B</text><text x="790" y="152">app C</text>
+          <text x="570" y="176">own files</text><text x="680" y="176">own files</text><text x="790" y="176">own files</text>
+        </g>
+      </g>
+      <text x="680" y="62" text-anchor="middle" class="s">just processes with private views · seconds · megabytes</text>
+      <text x="680" y="108" text-anchor="middle" class="s">each one sees only its own filesystem, network, and process list</text>
+    </svg>
+    <figcaption><b>Figure 2.</b> The difference is the kernel. A VM carries its own; a container borrows the host's and only brings its files. That is why one starts in minutes and the other in a second.</figcaption>
+  </figure>
+
+  <div class="callout"><p><b>For ML engineers:</b> an image is to a container what a trained model artifact is to a running inference process. Build the artifact once, store it, start as many live copies as you need. Same file in, same behaviour out.</p></div>
+
+  <h2 style="font-size:24px;margin-top:34px"><small>02.1</small>Image versus container</h2>
+  <p>Say it out loud: the image is the frozen thing you build and ship; the container is the live thing you run. If a container misbehaves, delete it and start another from the same image. Nothing you do inside a running container changes the image.</p>
+
+  <figure>
+    <svg viewBox="0 0 880 222" role="img" aria-label="A Dockerfile is built into one image. The image is run into many containers, and pushed to a registry that other machines pull from.">
+      <defs><marker id="ar2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
+      <rect x="10" y="70" width="120" height="70" rx="10" class="soft"/>
+      <text x="70" y="100" text-anchor="middle" font-weight="600">Dockerfile</text>
+      <text x="70" y="122" text-anchor="middle" class="s">the recipe, text</text>
+      <path d="M130 105 L228 105" class="ln a" marker-end="url(#ar2)" style="color:#1f4e79"/>
+      <text x="177" y="94" text-anchor="middle" class="lab">docker build</text>
+      <rect x="230" y="60" width="160" height="90" rx="10" class="hi"/>
+      <text x="310" y="96" text-anchor="middle" font-weight="600">image</text>
+      <text x="310" y="118" text-anchor="middle" class="s">frozen, read-only</text>
+      <text x="310" y="136" text-anchor="middle" class="s">never changes</text>
+      <path d="M390 90 L478 50" class="ln" marker-end="url(#ar2)"/>
+      <path d="M390 105 L478 105" class="ln" marker-end="url(#ar2)"/>
+      <path d="M390 120 L478 160" class="ln" marker-end="url(#ar2)"/>
+      <text x="418" y="34" text-anchor="middle" class="lab" style="fill:#1d1a17">docker run ×3</text>
+      <rect x="480" y="28" width="130" height="44" rx="8" class="box"/><text x="545" y="55" text-anchor="middle" class="m">container 1</text>
+      <rect x="480" y="83" width="130" height="44" rx="8" class="box"/><text x="545" y="110" text-anchor="middle" class="m">container 2</text>
+      <rect x="480" y="138" width="130" height="44" rx="8" class="box"/><text x="545" y="165" text-anchor="middle" class="m">container 3</text>
+      <path d="M310 150 L310 196 L765 196 L765 152" class="ln a dash" marker-end="url(#ar2)" style="color:#1f4e79"/>
+      <text x="537" y="214" text-anchor="middle" class="lab">docker push · other machines then docker pull</text>
+      <rect x="690" y="60" width="180" height="90" rx="10" class="soft"/>
+      <text x="780" y="96" text-anchor="middle" font-weight="600">registry</text>
+      <text x="780" y="118" text-anchor="middle" class="s">the same image,</text>
+      <text x="780" y="136" text-anchor="middle" class="s">reachable from anywhere</text>
+    </svg>
+    <figcaption><b>Figure 3.</b> One recipe, one image, any number of containers. The registry is how the same image reaches a machine you have never touched.</figcaption>
+  </figure>
+</section>
+
+<section id="words">
+  <h2><small>03</small>The six words you need</h2>
+  <dl class="words">
+    <div class="word"><dt>Dockerfile</dt><dd>A recipe. A short text file listing the steps to assemble the environment, top to bottom.</dd></div>
+    <div class="word"><dt>image</dt><dd>The result of running the recipe. A frozen, read-only snapshot of a filesystem with your app inside. It never changes once built.</dd></div>
+    <div class="word"><dt>container</dt><dd>A running copy of an image. Start it, stop it, throw it away; the image is untouched. Run many from one image.</dd></div>
+    <div class="word"><dt>layer</dt><dd>Each line in the Dockerfile adds one layer to the image. Unchanged layers are cached, so rebuilds only redo what changed.</dd></div>
+    <div class="word"><dt>registry</dt><dd>A place to push images so other machines can pull them. Docker Hub, GitHub Container Registry, every cloud has one. Git for images.</dd></div>
+    <div class="word"><dt>tag</dt><dd>A label on an image, like <code>oracle:day2</code>. Use something meaningful; <code>latest</code> tells nobody what they are running.</dd></div>
+  </dl>
+
+  <figure>
+    <svg viewBox="0 0 880 230" role="img" aria-label="An image is a stack of layers, one per Dockerfile line. When only the code changes, the layers below it are reused from cache and only the layers above are rebuilt.">
+      <defs><marker id="ar3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
+      <text x="240" y="24" text-anchor="middle" font-weight="600">One image = a stack of layers</text>
+      <g class="m">
+        <rect x="80" y="180" width="320" height="30" rx="5" class="soft"/><text x="96" y="200">FROM python:3.12-slim</text><text x="392" y="200" text-anchor="end" class="s">cached</text>
+        <rect x="80" y="146" width="320" height="30" rx="5" class="soft"/><text x="96" y="166">COPY uv binary</text><text x="392" y="166" text-anchor="end" class="s">cached</text>
+        <rect x="80" y="112" width="320" height="30" rx="5" class="soft"/><text x="96" y="132">COPY pyproject.toml uv.lock</text><text x="392" y="132" text-anchor="end" class="s">cached</text>
+        <rect x="80" y="78" width="320" height="30" rx="5" class="soft"/><text x="96" y="98">RUN uv sync  (slow, 40 packages)</text><text x="392" y="98" text-anchor="end" class="s">cached</text>
+        <rect x="80" y="44" width="320" height="30" rx="5" class="warm"/><text x="96" y="64">COPY app static artifacts</text><text x="392" y="64" text-anchor="end" class="lab w">rebuilt</text>
+      </g>
+      <path d="M480 60 L410 60" class="ln w" marker-end="url(#ar3)" style="color:#b8562a"/>
+      <text x="490" y="64" class="s" style="fill:#b8562a">you edit app/main.py</text>
+      <text x="490" y="110" class="s">Docker walks the recipe from the top.</text>
+      <text x="490" y="132" class="s">Every line whose inputs are unchanged</text>
+      <text x="490" y="154" class="s">is reused. The first changed line, and</text>
+      <text x="490" y="176" class="s">everything after it, is redone.</text>
+      <text x="490" y="205" class="s" style="fill:#1f4e79">Slow, stable steps go first. Fast, busy steps go last.</text>
+    </svg>
+    <figcaption><b>Figure 4.</b> Why the Dockerfile copies the lockfile and installs packages <em>before</em> copying the code. A one-line edit then rebuilds one layer, not forty packages.</figcaption>
+  </figure>
+</section>
+
+<section id="outside">
+  <h2><small>04</small>What stays outside the box</h2>
+  <p>An image holds what is the same everywhere, and nothing that changes per machine or per person. Three things deliberately stay out:</p>
+  <ul>
+    <li><b>Secrets.</b> The API key is handed in at run time with <code>--env-file</code>. Baked into the image, everyone who pulls the image has your key.</li>
+    <li><b>Ports.</b> The container listens on its own port 8000. You decide at run time which host port maps to it, so two containers can both use 8000 inside.</li>
+    <li><b>Data that must survive.</b> When a container stops, everything written inside it is gone. Anything that must persist lives in a <b>volume</b>, a host folder mounted into the container. This is why the leaderboard vanishes on restart, and why Day 5 adds a database.</li>
+  </ul>
+
+  <figure>
+    <svg viewBox="0 0 880 270" role="img" aria-label="At run time the host supplies three things to the container: the env file as environment variables, a host port mapped to the container port, and a host folder mounted as a volume.">
+      <defs><marker id="ar4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
+      <!-- host -->
+      <rect x="20" y="20" width="840" height="230" rx="14" class="soft"/>
+      <text x="40" y="46" class="m" style="fill:#6b645a">HOST MACHINE</text>
+      <!-- container -->
+      <rect x="470" y="60" width="360" height="164" rx="12" class="hi"/>
+      <text x="650" y="86" text-anchor="middle" font-weight="600">container · from the image</text>
+      <g class="m">
+        <rect x="500" y="104" width="300" height="28" rx="5" class="box"/><text x="514" y="123">OPENROUTER_API_KEY = ••••</text>
+        <rect x="500" y="146" width="300" height="28" rx="5" class="box"/><text x="514" y="165">uvicorn listening on :8000</text>
+        <rect x="500" y="188" width="300" height="28" rx="5" class="box"/><text x="514" y="207">/app/data  (mounted)</text>
+      </g>
+      <!-- host side items -->
+      <g class="m">
+        <rect x="50" y="104" width="200" height="28" rx="5" class="warm"/><text x="64" y="123">.env file</text>
+        <rect x="50" y="146" width="200" height="28" rx="5" class="warm"/><text x="64" y="165">host port 8000</text>
+        <rect x="50" y="188" width="200" height="28" rx="5" class="warm"/><text x="64" y="207">./data folder on disk</text>
+      </g>
+      <path d="M250 118 L498 118" class="ln w" marker-end="url(#ar4)" style="color:#b8562a"/>
+      <text x="374" y="112" text-anchor="middle" class="lab w">--env-file .env</text>
+      <path d="M250 160 L498 160" class="ln w" marker-end="url(#ar4)" style="color:#b8562a"/>
+      <text x="374" y="154" text-anchor="middle" class="lab w">-p 8000:8000</text>
+      <path d="M250 202 L498 202" class="ln w" marker-end="url(#ar4)" style="color:#b8562a"/>
+      <path d="M498 208 L250 208" class="ln w" marker-end="url(#ar4)" style="color:#b8562a"/>
+      <text x="374" y="196" text-anchor="middle" class="lab w">-v ./data:/app/data</text>
+      <text x="440" y="243" text-anchor="middle" class="s">all three are supplied by the run command; none of them is inside the image</text>
+    </svg>
+    <figcaption><b>Figure 5.</b> The run command is where the per-machine things enter. The same image runs with a different key, a different port, and a different data folder on every host.</figcaption>
+  </figure>
+</section>
+
+<section id="dockerfile">
+  <h2><small>05</small>The Oracle's Dockerfile, line by line</h2>
+  <p>Save this as <code>day01/oracle/Dockerfile</code>. Every line is one step in the recipe and one layer in the image.</p>
+<pre><span class="n">1</span>FROM python:3.12-slim
+<span class="n">2</span>WORKDIR /app
+<span class="n">3</span>COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
+<span class="n">4</span>
+<span class="n">5</span><span class="c"># dependencies first: cached until the lockfile changes</span>
+<span class="n">6</span>COPY pyproject.toml uv.lock ./
+<span class="n">7</span>RUN uv sync --frozen --no-dev
+<span class="n">8</span>
+<span class="n">9</span><span class="c"># then the code, which changes often</span>
+<span class="n">10</span>COPY app ./app
+<span class="n">11</span>COPY static ./static
+<span class="n">12</span>COPY artifacts ./artifacts
+<span class="n">13</span>
+<span class="n">14</span>EXPOSE 8000
+<span class="n">15</span>CMD ["uv", "run", "--no-sync", "uvicorn", "app.main:app",
+<span class="n">16</span>     "--host", "0.0.0.0", "--port", "8000"]</pre>
+  <ol class="steps">
+    <li><span class="ln-no">1</span><p><b>Start from</b> an official image that already has Python 3.12 on a small Debian. You never install Python yourself.</p></li>
+    <li><span class="ln-no">2</span><p><b>Work in</b> <code>/app</code> inside the image. Every later path is relative to it.</p></li>
+    <li><span class="ln-no">3</span><p><b>Copy the uv binary</b> out of uv's own image. One file, no installer.</p></li>
+    <li><span class="ln-no">6–7</span><p><b>Copy only the two dependency files</b>, then <b>install exactly the locked versions</b>. <code>--frozen</code> refuses to resolve anything new: the image gets what your laptop had.</p></li>
+    <li><span class="ln-no">10–12</span><p><b>Now copy the code and models.</b> Editing a Python file only rebuilds from here down; the slow install above is reused.</p></li>
+    <li><span class="ln-no">14</span><p><b>Document the port.</b> A note for humans and tools; it opens nothing by itself.</p></li>
+    <li><span class="ln-no">15–16</span><p><b>The command that runs when the container starts.</b> Note <code>0.0.0.0</code>: inside a container, <code>localhost</code> means "this container only". Bind to all interfaces or nothing outside can reach you. Everyone makes this mistake once.</p></li>
+  </ol>
+</section>
+
+<section id="commands">
+  <h2><small>06</small>Build, run, look, ship</h2>
+  <div class="cmds">
+    <div class="cmd"><pre>docker build -t oracle:day2 .</pre><div class="why"><b>recipe → image</b>Reads the Dockerfile in this folder, produces an image tagged <code>oracle:day2</code>.</div></div>
+    <div class="cmd"><pre>docker run --rm -p 8000:8000 \
+  --env-file .env oracle:day2</pre><div class="why"><b>image → container</b>Starts one container, maps the port, hands in the key. <code>--rm</code> deletes it when it stops.</div></div>
+    <div class="cmd"><pre>docker ps
+docker logs -f NAME
+docker stop NAME</pre><div class="why"><b>look</b>What is running, what it is saying, and how to stop it.</div></div>
+    <div class="cmd"><pre>docker tag oracle:day2 ghcr.io/YOU/oracle:day2
+docker push ghcr.io/YOU/oracle:day2</pre><div class="why"><b>ship</b>Name it for a registry and push. Any machine can now pull it.</div></div>
+  </div>
+  <p><code>-p 8000:8000</code> reads "host port : container port". The <code>.env</code> file is never copied into the image. List <code>.env</code>, <code>.venv</code>, and <code>data/raw</code> in <code>.dockerignore</code> so they are not even sent to the build.</p>
+</section>
+
+<section id="compose">
+  <h2><small>07</small>Several containers, one file</h2>
+  <p>On Day 5 the agent, the models, and a database become separate containers. <b>Docker Compose</b> is one YAML file naming each of them; <code>docker compose up</code> starts them all and they reach each other by name. That is why the Oracle's tools read <code>MODEL_API_URL</code> from the environment instead of hard-coding <code>localhost</code>.</p>
+
+  <figure>
+    <svg viewBox="0 0 880 220" role="img" aria-label="Three containers started by one Compose file share a private network and address each other by service name: the agent calls the models at http://models:8000, and the models container talks to postgres by name.">
+      <defs><marker id="ar5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
+      <rect x="20" y="20" width="840" height="180" rx="14" class="soft"/>
+      <text x="40" y="46" class="m" style="fill:#6b645a">docker compose up  ·  one private network, containers find each other by name</text>
+      <rect x="60" y="80" width="180" height="80" rx="10" class="hi"/>
+      <text x="150" y="112" text-anchor="middle" font-weight="600">agent</text>
+      <text x="150" y="136" text-anchor="middle" class="m">the Oracle's chat</text>
+      <rect x="350" y="80" width="180" height="80" rx="10" class="hi"/>
+      <text x="440" y="112" text-anchor="middle" font-weight="600">models</text>
+      <text x="440" y="136" text-anchor="middle" class="m">/predict/* endpoints</text>
+      <rect x="640" y="80" width="180" height="80" rx="10" class="hi"/>
+      <text x="730" y="112" text-anchor="middle" font-weight="600">postgres</text>
+      <text x="730" y="136" text-anchor="middle" class="m">sessions, leaderboard</text>
+      <path d="M240 120 L348 120" class="ln a" marker-end="url(#ar5)" style="color:#1f4e79"/>
+      <text x="294" y="106" text-anchor="middle" class="lab">MODEL_API_URL=</text>
+      <text x="294" y="182" text-anchor="middle" class="lab">http://models:8000</text>
+      <path d="M530 120 L638 120" class="ln a" marker-end="url(#ar5)" style="color:#1f4e79"/>
+      <text x="584" y="106" text-anchor="middle" class="lab">DATABASE_URL=</text>
+      <text x="584" y="182" text-anchor="middle" class="lab">postgres://postgres:5432</text>
+    </svg>
+    <figcaption><b>Figure 6.</b> The Day 5 shape. The agent still calls the same endpoints, but the host name in the env var changes from <code>localhost</code> to the name of another container.</figcaption>
+  </figure>
+</section>
+
+<section id="mistakes">
+  <h2><small>08</small>Mistakes to make on purpose, once</h2>
+  <ul class="mistakes">
+    <li>Binding to <code>127.0.0.1</code> inside the container. The app runs; nothing can reach it.</li>
+    <li>Copying the whole folder before installing. Every code edit reinstalls every package.</li>
+    <li>Baking <code>.env</code> into the image. Run <code>docker history</code> on it and read your own key back.</li>
+    <li>Shipping <code>:latest</code>. Next week's "latest" is a different image and nobody can say which.</li>
+    <li>A 2 GB image because the base was <code>python:3.12</code> not <code>-slim</code>, and the raw survey CSV came along for the ride.</li>
+  </ul>
+
+  <p class="remember"><b>The one sentence to remember:</b> the image holds everything that is the same everywhere; the run command supplies everything that is not.</p>
+</section>
+
+</main>
+</body>
+</html>
