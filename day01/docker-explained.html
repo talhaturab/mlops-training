@@ -3,17 +3,36 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="color-scheme" content="light only">
+<meta name="color-scheme" content="light dark">
 <title>Docker, in plain English</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400;1,8..60,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root {
-    color-scheme: light only;
-    --paper: #fbf8f1; --panel: #f3eee2; --ink: #1d1a17; --muted: #6b645a; --rule: #ddd6c8;
-    --accent: #1f4e79; --accent-soft: #e4edf6; --warm: #b8562a; --warm-soft: #f6e6dc; --code-bg: #1d1a17;
+    color-scheme: light;
+    --paper: #fbf8f1; --panel: #f3eee2; --card: #ffffff; --ink: #1d1a17; --muted: #6b645a; --rule: #ddd6c8;
+    --accent: #1f4e79; --accent-soft: #e4edf6; --warm: #b8562a; --warm-soft: #f6e6dc;
+    --code-bg: #1d1a17; --code-ink: #f1ebe0; --code-muted: #a39a88; --code-num: #6f675b;
+    --remember-bg: #1d1a17; --remember-ink: #fbf8f1; --remember-accent: #f3c988; --ghost: #c9c1b1;
     --serif: "Source Serif 4", "Iowan Old Style", Charter, Georgia, serif;
     --mono: "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
+  }
+  /* dark palette: follows the system unless the toggle has set data-theme */
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --paper: #15131a; --panel: #1f1c25; --card: #1a1820; --ink: #ebe6dc; --muted: #a59d92; --rule: #383341;
+      --accent: #8fb6de; --accent-soft: #1e2a3a; --warm: #e5906a; --warm-soft: #3a2a23;
+      --code-bg: #0e0d12; --code-ink: #e9e3d8; --code-muted: #8f877c; --code-num: #5c5666;
+      --remember-bg: #ebe6dc; --remember-ink: #15131a; --remember-accent: #8a4d24; --ghost: #4a4552;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --paper: #15131a; --panel: #1f1c25; --card: #1a1820; --ink: #ebe6dc; --muted: #a59d92; --rule: #383341;
+    --accent: #8fb6de; --accent-soft: #1e2a3a; --warm: #e5906a; --warm-soft: #3a2a23;
+    --code-bg: #0e0d12; --code-ink: #e9e3d8; --code-muted: #8f877c; --code-num: #5c5666;
+    --remember-bg: #ebe6dc; --remember-ink: #15131a; --remember-accent: #8a4d24; --ghost: #4a4552;
   }
   * { box-sizing: border-box; }
   html { scroll-behavior: smooth; }
@@ -28,6 +47,8 @@
   .toc { max-width: 880px; margin: 0 auto; padding: 18px 24px 0; display: flex; flex-wrap: wrap; gap: 8px 22px; font-family: var(--mono); font-size: 12.5px; }
   .toc a { color: var(--muted); text-decoration: none; border-bottom: 1px solid var(--rule); padding-bottom: 1px; }
   .toc a:hover { color: var(--accent); border-color: var(--accent); }
+  .toc .theme { margin-left: auto; font: inherit; color: var(--muted); background: var(--card); border: 1px solid var(--rule); border-radius: 999px; padding: 4px 12px; cursor: pointer; }
+  .toc .theme:hover { color: var(--accent); border-color: var(--accent); }
 
   /* ---------- body ---------- */
   main { max-width: 880px; margin: 0 auto; padding: 24px 24px 96px; }
@@ -39,11 +60,11 @@
   ul { margin: 0 0 18px; padding-left: 22px; max-width: 68ch; } li { margin-bottom: 10px; }
   li::marker { color: var(--accent); }
   code { font-family: var(--mono); font-size: .86em; background: var(--panel); padding: 1px 6px; border-radius: 4px; }
-  .callout { background: var(--accent-soft); border-left: 4px solid var(--accent); padding: 16px 20px; margin: 24px 0; max-width: 72ch; border-radius: 0 8px 8px 0; }
+  .callout { background: var(--accent-soft); border-left: 4px solid var(--accent); color: var(--ink); padding: 16px 20px; margin: 24px 0; max-width: 72ch; border-radius: 0 8px 8px 0; }
   .callout b { color: var(--accent); }
   .callout p:last-child { margin: 0; }
-  .remember { background: var(--ink); color: var(--paper); padding: 28px 30px; border-radius: 12px; font-size: 24px; line-height: 1.35; font-style: italic; margin: 32px 0 0; }
-  .remember b { color: #f3c988; font-style: normal; }
+  .remember { background: var(--remember-bg); color: var(--remember-ink); padding: 28px 30px; border-radius: 12px; font-size: 24px; line-height: 1.35; font-style: italic; margin: 32px 0 0; }
+  .remember b { color: var(--remember-accent); font-style: normal; }
 
   /* ---------- figures ---------- */
   figure { margin: 26px 0 30px; }
@@ -53,7 +74,7 @@
   svg text { font-family: var(--serif); font-size: 15px; fill: var(--ink); }
   svg .m { font-family: var(--mono); font-size: 12.5px; }
   svg .s { font-size: 12.5px; fill: var(--muted); }
-  svg .box { fill: #fff; stroke: var(--ink); stroke-width: 1.5; }
+  svg .box { fill: var(--card); stroke: var(--ink); stroke-width: 1.5; }
   svg .soft { fill: var(--panel); stroke: var(--rule); stroke-width: 1.5; }
   svg .hi { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.8; }
   svg .warm { fill: var(--warm-soft); stroke: var(--warm); stroke-width: 1.8; }
@@ -67,21 +88,21 @@
   /* ---------- glossary ---------- */
   .words { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 8px 0 18px; }
   @media (max-width: 720px) { .words { grid-template-columns: 1fr; } }
-  .word { background: #fff; border: 1px solid var(--rule); border-radius: 10px; padding: 16px 18px; }
+  .word { background: var(--card); border: 1px solid var(--rule); border-radius: 10px; padding: 16px 18px; }
   .word dt { font-family: var(--mono); font-size: 15px; color: var(--accent); font-weight: 500; margin-bottom: 6px; }
   .word dd { margin: 0; font-size: 16.5px; line-height: 1.5; }
 
   /* ---------- dockerfile ---------- */
-  pre { margin: 0; background: var(--code-bg); color: #f1ebe0; font-family: var(--mono); font-size: 14px; line-height: 1.6; padding: 18px 20px; border-radius: 10px; white-space: pre; overflow-x: auto; }
-  pre .c { color: #a39a88; }
-  pre .n { display: inline-block; width: 26px; color: #6f675b; user-select: none; }
+  pre { margin: 0; background: var(--code-bg); color: var(--code-ink); border: 1px solid var(--rule); font-family: var(--mono); font-size: 14px; line-height: 1.6; padding: 18px 20px; border-radius: 10px; white-space: pre; overflow-x: auto; }
+  pre .c { color: var(--code-muted); }
+  pre .n { display: inline-block; width: 26px; color: var(--code-num); user-select: none; }
   pre .hl { background: rgba(31,78,121,.45); display: inline-block; width: 100%; }
   .steps { list-style: none; padding: 0; margin: 22px 0 0; max-width: none; }
   .steps li { display: grid; grid-template-columns: 54px 1fr; gap: 14px; padding: 14px 0; border-top: 1px solid var(--rule); margin: 0; align-items: start; }
   .steps .ln-no { font-family: var(--mono); font-size: 13px; color: var(--accent); background: var(--accent-soft); border-radius: 6px; padding: 5px 0; text-align: center; margin-top: 2px; }
   .steps p { margin: 0; max-width: none; }
   .cmds { display: grid; grid-template-columns: 1fr; gap: 12px; margin: 8px 0 20px; }
-  .cmd { display: grid; grid-template-columns: 1fr 240px; gap: 18px; align-items: center; background: #fff; border: 1px solid var(--rule); border-radius: 10px; padding: 12px 16px; }
+  .cmd { display: grid; grid-template-columns: 1fr 240px; gap: 18px; align-items: center; background: var(--card); border: 1px solid var(--rule); border-radius: 10px; padding: 12px 16px; }
   .cmd pre { padding: 10px 14px; font-size: 13.5px; }
   .cmd .why { font-size: 16px; line-height: 1.45; }
   .cmd .why b { font-family: var(--mono); font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--accent); display: block; margin-bottom: 2px; }
@@ -91,6 +112,13 @@
   .mistakes li { background: var(--warm-soft); border-left: 4px solid var(--warm); border-radius: 0 8px 8px 0; padding: 12px 16px; margin: 0; font-size: 16.5px; line-height: 1.5; }
   @media print { .toc { display: none; } section { break-inside: avoid; } }
 </style>
+<script>
+  // Apply a saved theme before first paint so the page never flashes the wrong colours.
+  try {
+    const saved = localStorage.getItem("docker-doc-theme");
+    if (saved === "dark" || saved === "light") document.documentElement.dataset.theme = saved;
+  } catch (e) {}
+</script>
 </head>
 <body>
 
@@ -103,6 +131,7 @@
   <a href="#problem">The problem</a><a href="#container">What a container is</a><a href="#words">Six words</a>
   <a href="#outside">What stays outside</a><a href="#dockerfile">The Dockerfile</a><a href="#commands">Build, run, ship</a>
   <a href="#compose">Compose</a><a href="#mistakes">Mistakes</a>
+  <button class="theme" id="theme" type="button" aria-label="Switch colour theme">theme</button>
 </nav>
 
 <main>
@@ -131,12 +160,12 @@
       <!-- cloud machine -->
       <rect x="560" y="30" width="300" height="190" rx="12" class="box" stroke-dasharray="6 5"/>
       <text x="710" y="58" text-anchor="middle" font-weight="600">A rented machine</text>
-      <text x="710" y="135" text-anchor="middle" font-size="40" fill="#c9c1b1">?</text>
+      <text x="710" y="135" text-anchor="middle" font-size="40" fill="var(--ghost)">?</text>
       <text x="710" y="190" text-anchor="middle" class="s">nothing installed, nothing configured</text>
       <!-- arrows -->
-      <path d="M320 125 L378 125" class="ln a" marker-end="url(#ar)" style="color:#1f4e79"/>
+      <path d="M320 125 L378 125" class="ln a" marker-end="url(#ar)" style="color:var(--accent)"/>
       <text x="349" y="112" text-anchor="middle" class="lab">build</text>
-      <path d="M500 125 L558 125" class="ln a" marker-end="url(#ar)" style="color:#1f4e79"/>
+      <path d="M500 125 L558 125" class="ln a" marker-end="url(#ar)" style="color:var(--accent)"/>
       <text x="529" y="112" text-anchor="middle" class="lab">run</text>
       <text x="440" y="236" text-anchor="middle" class="s">the two orange items are handed in at run time, not packed (see 04)</text>
     </svg>
@@ -169,7 +198,7 @@
       </g>
       <text x="200" y="62" text-anchor="middle" class="s">boots a whole OS each · minutes · gigabytes</text>
       <!-- divider -->
-      <line x1="440" y1="20" x2="440" y2="280" class="ln dash" stroke="#ddd6c8"/>
+      <line x1="440" y1="20" x2="440" y2="280" class="ln dash" style="stroke:var(--rule)"/>
       <!-- container side -->
       <text x="680" y="26" text-anchor="middle" font-weight="600">Containers</text>
       <rect x="520" y="240" width="320" height="34" rx="6" class="soft"/><text x="680" y="262" text-anchor="middle" class="m">hardware</text>
@@ -200,7 +229,7 @@
       <rect x="10" y="70" width="120" height="70" rx="10" class="soft"/>
       <text x="70" y="100" text-anchor="middle" font-weight="600">Dockerfile</text>
       <text x="70" y="122" text-anchor="middle" class="s">the recipe, text</text>
-      <path d="M130 105 L228 105" class="ln a" marker-end="url(#ar2)" style="color:#1f4e79"/>
+      <path d="M130 105 L228 105" class="ln a" marker-end="url(#ar2)" style="color:var(--accent)"/>
       <text x="177" y="94" text-anchor="middle" class="lab">docker build</text>
       <rect x="230" y="60" width="160" height="90" rx="10" class="hi"/>
       <text x="310" y="96" text-anchor="middle" font-weight="600">image</text>
@@ -209,11 +238,11 @@
       <path d="M390 90 L478 50" class="ln" marker-end="url(#ar2)"/>
       <path d="M390 105 L478 105" class="ln" marker-end="url(#ar2)"/>
       <path d="M390 120 L478 160" class="ln" marker-end="url(#ar2)"/>
-      <text x="418" y="34" text-anchor="middle" class="lab" style="fill:#1d1a17">docker run ×3</text>
+      <text x="418" y="34" text-anchor="middle" class="lab" style="fill:var(--ink)">docker run ×3</text>
       <rect x="480" y="28" width="130" height="44" rx="8" class="box"/><text x="545" y="55" text-anchor="middle" class="m">container 1</text>
       <rect x="480" y="83" width="130" height="44" rx="8" class="box"/><text x="545" y="110" text-anchor="middle" class="m">container 2</text>
       <rect x="480" y="138" width="130" height="44" rx="8" class="box"/><text x="545" y="165" text-anchor="middle" class="m">container 3</text>
-      <path d="M310 150 L310 196 L765 196 L765 152" class="ln a dash" marker-end="url(#ar2)" style="color:#1f4e79"/>
+      <path d="M310 150 L310 196 L765 196 L765 152" class="ln a dash" marker-end="url(#ar2)" style="color:var(--accent)"/>
       <text x="537" y="214" text-anchor="middle" class="lab">docker push · other machines then docker pull</text>
       <rect x="690" y="60" width="180" height="90" rx="10" class="soft"/>
       <text x="780" y="96" text-anchor="middle" font-weight="600">registry</text>
@@ -246,13 +275,13 @@
         <rect x="80" y="78" width="320" height="30" rx="5" class="soft"/><text x="96" y="98">RUN uv sync  (slow, 40 packages)</text><text x="392" y="98" text-anchor="end" class="s">cached</text>
         <rect x="80" y="44" width="320" height="30" rx="5" class="warm"/><text x="96" y="64">COPY app static artifacts</text><text x="392" y="64" text-anchor="end" class="lab w">rebuilt</text>
       </g>
-      <path d="M480 60 L410 60" class="ln w" marker-end="url(#ar3)" style="color:#b8562a"/>
-      <text x="490" y="64" class="s" style="fill:#b8562a">you edit app/main.py</text>
+      <path d="M480 60 L410 60" class="ln w" marker-end="url(#ar3)" style="color:var(--warm)"/>
+      <text x="490" y="64" class="s" style="fill:var(--warm)">you edit app/main.py</text>
       <text x="490" y="110" class="s">Docker walks the recipe from the top.</text>
       <text x="490" y="132" class="s">Every line whose inputs are unchanged</text>
       <text x="490" y="154" class="s">is reused. The first changed line, and</text>
       <text x="490" y="176" class="s">everything after it, is redone.</text>
-      <text x="490" y="205" class="s" style="fill:#1f4e79">Slow, stable steps go first. Fast, busy steps go last.</text>
+      <text x="490" y="205" class="s" style="fill:var(--accent)">Slow, stable steps go first. Fast, busy steps go last.</text>
     </svg>
     <figcaption><b>Figure 4.</b> Why the Dockerfile copies the lockfile and installs packages <em>before</em> copying the code. A one-line edit then rebuilds one layer, not forty packages.</figcaption>
   </figure>
@@ -272,7 +301,7 @@
       <defs><marker id="ar4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
       <!-- host -->
       <rect x="20" y="20" width="840" height="230" rx="14" class="soft"/>
-      <text x="40" y="46" class="m" style="fill:#6b645a">HOST MACHINE</text>
+      <text x="40" y="46" class="m" style="fill:var(--muted)">HOST MACHINE</text>
       <!-- container -->
       <rect x="470" y="60" width="360" height="164" rx="12" class="hi"/>
       <text x="650" y="86" text-anchor="middle" font-weight="600">container · from the image</text>
@@ -287,12 +316,12 @@
         <rect x="50" y="146" width="200" height="28" rx="5" class="warm"/><text x="64" y="165">host port 8000</text>
         <rect x="50" y="188" width="200" height="28" rx="5" class="warm"/><text x="64" y="207">./data folder on disk</text>
       </g>
-      <path d="M250 118 L498 118" class="ln w" marker-end="url(#ar4)" style="color:#b8562a"/>
+      <path d="M250 118 L498 118" class="ln w" marker-end="url(#ar4)" style="color:var(--warm)"/>
       <text x="374" y="112" text-anchor="middle" class="lab w">--env-file .env</text>
-      <path d="M250 160 L498 160" class="ln w" marker-end="url(#ar4)" style="color:#b8562a"/>
+      <path d="M250 160 L498 160" class="ln w" marker-end="url(#ar4)" style="color:var(--warm)"/>
       <text x="374" y="154" text-anchor="middle" class="lab w">-p 8000:8000</text>
-      <path d="M250 202 L498 202" class="ln w" marker-end="url(#ar4)" style="color:#b8562a"/>
-      <path d="M498 208 L250 208" class="ln w" marker-end="url(#ar4)" style="color:#b8562a"/>
+      <path d="M250 202 L498 202" class="ln w" marker-end="url(#ar4)" style="color:var(--warm)"/>
+      <path d="M498 208 L250 208" class="ln w" marker-end="url(#ar4)" style="color:var(--warm)"/>
       <text x="374" y="196" text-anchor="middle" class="lab w">-v ./data:/app/data</text>
       <text x="440" y="243" text-anchor="middle" class="s">all three are supplied by the run command; none of them is inside the image</text>
     </svg>
@@ -353,7 +382,7 @@ docker push ghcr.io/YOU/oracle:day2</pre><div class="why"><b>ship</b>Name it for
     <svg viewBox="0 0 880 220" role="img" aria-label="Three containers started by one Compose file share a private network and address each other by service name: the agent calls the models at http://models:8000, and the models container talks to postgres by name.">
       <defs><marker id="ar5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
       <rect x="20" y="20" width="840" height="180" rx="14" class="soft"/>
-      <text x="40" y="46" class="m" style="fill:#6b645a">docker compose up  ·  one private network, containers find each other by name</text>
+      <text x="40" y="46" class="m" style="fill:var(--muted)">docker compose up  ·  one private network, containers find each other by name</text>
       <rect x="60" y="80" width="180" height="80" rx="10" class="hi"/>
       <text x="150" y="112" text-anchor="middle" font-weight="600">agent</text>
       <text x="150" y="136" text-anchor="middle" class="m">the Oracle's chat</text>
@@ -363,10 +392,10 @@ docker push ghcr.io/YOU/oracle:day2</pre><div class="why"><b>ship</b>Name it for
       <rect x="640" y="80" width="180" height="80" rx="10" class="hi"/>
       <text x="730" y="112" text-anchor="middle" font-weight="600">postgres</text>
       <text x="730" y="136" text-anchor="middle" class="m">sessions, leaderboard</text>
-      <path d="M240 120 L348 120" class="ln a" marker-end="url(#ar5)" style="color:#1f4e79"/>
+      <path d="M240 120 L348 120" class="ln a" marker-end="url(#ar5)" style="color:var(--accent)"/>
       <text x="294" y="106" text-anchor="middle" class="lab">MODEL_API_URL=</text>
       <text x="294" y="182" text-anchor="middle" class="lab">http://models:8000</text>
-      <path d="M530 120 L638 120" class="ln a" marker-end="url(#ar5)" style="color:#1f4e79"/>
+      <path d="M530 120 L638 120" class="ln a" marker-end="url(#ar5)" style="color:var(--accent)"/>
       <text x="584" y="106" text-anchor="middle" class="lab">DATABASE_URL=</text>
       <text x="584" y="182" text-anchor="middle" class="lab">postgres://postgres:5432</text>
     </svg>
@@ -388,5 +417,20 @@ docker push ghcr.io/YOU/oracle:day2</pre><div class="why"><b>ship</b>Name it for
 </section>
 
 </main>
+<script>
+  const root = document.documentElement;
+  const button = document.getElementById("theme");
+  const systemDark = window.matchMedia("(prefers-color-scheme: dark)");
+  function current() { return root.dataset.theme || (systemDark.matches ? "dark" : "light"); }
+  function label() { button.textContent = current() === "dark" ? "☀ light" : "☾ dark"; }
+  button.addEventListener("click", () => {
+    const next = current() === "dark" ? "light" : "dark";
+    root.dataset.theme = next;
+    try { localStorage.setItem("docker-doc-theme", next); } catch (e) {}
+    label();
+  });
+  systemDark.addEventListener("change", label);
+  label();
+</script>
 </body>
 </html>
