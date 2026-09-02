@@ -4,106 +4,239 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>The Oracle</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&family=Source+Sans+3:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-  :root { --bg:#14111f; --panel:#1f1a2e; --ink:#f3eefb; --muted:#b7aacb; --accent:#f5b942; --accent2:#7c5cff; }
+  :root {
+    --velvet: #170f2b;        /* page ground */
+    --velvet-2: #1f1538;      /* panels */
+    --curtain: #120c22;       /* the machinery side, darker and flatter */
+    --ink: #f1e9ff;
+    --lilac: #a99bcc;
+    --lilac-dim: #6f6390;
+    --gold: #e6b65c;
+    --gold-soft: rgba(230, 182, 92, .18);
+    --ember: #ff8a75;
+    --line: rgba(169, 155, 204, .18);
+    --serif: "Cormorant Garamond", "Iowan Old Style", Georgia, serif;
+    --sans: "Source Sans 3", "Helvetica Neue", Arial, sans-serif;
+    --mono: "JetBrains Mono", "SF Mono", Menlo, monospace;
+  }
   * { box-sizing: border-box; }
-  body { margin:0; font-family: Georgia, "Times New Roman", serif; background:var(--bg); color:var(--ink); }
-  header { padding:20px 28px; border-bottom:1px solid #2e2742; display:flex; justify-content:space-between; align-items:baseline; }
-  header h1 { margin:0; font-size:28px; color:var(--accent); letter-spacing:1px; }
-  header small { color:var(--muted); }
-  header a { color:var(--muted); }
-  main { display:grid; grid-template-columns: 1.1fr 1fr; gap:20px; padding:20px 28px; }
-  @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
-  .panel { background:var(--panel); border:1px solid #2e2742; border-radius:12px; padding:18px; }
-  h2 { margin:0 0 12px; font-size:18px; color:var(--accent); }
-  h3 { margin:18px 0 8px; font-size:15px; color:var(--muted); text-transform:uppercase; letter-spacing:1px; }
-  #log { height:52vh; overflow-y:auto; padding:8px; background:#120f1b; border-radius:8px; }
-  .msg { margin:8px 0; padding:10px 12px; border-radius:10px; max-width:90%; white-space:pre-wrap; line-height:1.4; }
-  .me { background:#2a2440; margin-left:auto; }
-  .oracle { background:#2b1d4d; border-left:3px solid var(--accent); }
-  .tools { font-size:12px; color:var(--muted); margin-top:6px; font-family: monospace; }
-  .tools:empty { display:none; }
-  .thinking { color:var(--muted); font-style:italic; animation: pulse 1.2s ease-in-out infinite; }
-  @keyframes pulse { 0%,100% { opacity:.5; } 50% { opacity:1; } }
-  form.chat { display:flex; gap:8px; margin-top:10px; }
-  input, select, button { font: inherit; }
-  input, select { width:100%; padding:8px; border-radius:6px; border:1px solid #3a3352; background:#120f1b; color:var(--ink); }
-  button { padding:8px 14px; border-radius:6px; border:0; background:var(--accent2); color:white; cursor:pointer; }
-  button:disabled { opacity:.5; cursor:wait; }
-  .grid { display:grid; grid-template-columns: 1fr 1fr; gap:8px; }
+  html, body { height: 100%; }
+  body {
+    margin: 0; background: var(--velvet); color: var(--ink);
+    font-family: var(--sans); font-size: 15px; line-height: 1.5;
+    background-image: radial-gradient(1200px 600px at 20% -10%, rgba(230,182,92,.07), transparent 60%);
+  }
+  a { color: var(--lilac); text-decoration: none; border-bottom: 1px solid var(--line); }
+  a:hover { color: var(--ink); border-color: var(--lilac); }
+
+  /* ---------- header ---------- */
+  header {
+    display: flex; align-items: baseline; justify-content: space-between; gap: 24px;
+    padding: 22px 36px 0;
+  }
+  .brand { display: flex; align-items: baseline; gap: 14px; }
+  .brand h1 { margin: 0; font: italic 600 40px/1 var(--serif); color: var(--gold); letter-spacing: .01em; }
+  .brand small { font-family: var(--mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--lilac-dim); }
+  nav { font-family: var(--mono); font-size: 12px; display: flex; gap: 18px; }
+
+  /* ---------- layout ---------- */
+  main {
+    display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: 28px;
+    padding: 20px 36px 36px; min-height: calc(100vh - 80px);
+  }
+  @media (max-width: 960px) {
+    main { grid-template-columns: 1fr; padding-inline: 20px; }
+    header { padding-inline: 20px; }
+    .seance { position: static; height: auto; }
+    .ball { min-height: 50vh; }
+  }
+
+  /* ---------- the séance (chat) ---------- */
+  .seance {
+    position: sticky; top: 16px; align-self: start; height: calc(100vh - 32px);
+    display: flex; flex-direction: column;
+    background: var(--velvet-2); border: 1px solid var(--line); border-radius: 22px; padding: 26px 28px 22px;
+    box-shadow: 0 0 0 1px rgba(0,0,0,.2), 0 30px 80px -40px rgba(0,0,0,.8);
+  }
+  .seance h2 { margin: 0 0 4px; font: italic 500 26px/1.1 var(--serif); color: var(--ink); }
+  .seance .lede { margin: 0 0 16px; color: var(--lilac); font-size: 14px; }
+
+  /* the crystal ball: the chat log sits inside a soft glow that breathes while the Oracle thinks */
+  .ball {
+    position: relative; flex: 1; min-height: 0; border-radius: 18px; overflow: hidden;
+    background: radial-gradient(120% 90% at 50% 110%, rgba(230,182,92,.10), transparent 55%), #140d27;
+    border: 1px solid var(--line);
+  }
+  .ball::before {
+    content: ""; position: absolute; inset: -40%; pointer-events: none; opacity: 0;
+    background:
+      radial-gradient(40% 35% at 30% 40%, rgba(169,155,204,.28), transparent 70%),
+      radial-gradient(35% 40% at 70% 60%, rgba(230,182,92,.22), transparent 70%),
+      radial-gradient(30% 30% at 55% 30%, rgba(120,90,220,.30), transparent 70%);
+    filter: blur(28px); transition: opacity .6s ease;
+  }
+  .ball.thinking::before { opacity: 1; animation: swirl 9s linear infinite; }
+  @keyframes swirl { from { transform: rotate(0deg) scale(1); } 50% { transform: rotate(180deg) scale(1.08); } to { transform: rotate(360deg) scale(1); } }
+  .ball.consulting { box-shadow: inset 0 0 0 1px var(--gold-soft), 0 0 40px -10px rgba(230,182,92,.35); }
+
+  #log { position: relative; height: 100%; overflow-y: auto; padding: 22px 24px; scroll-behavior: smooth; }
+  #log::-webkit-scrollbar { width: 8px; } #log::-webkit-scrollbar-thumb { background: var(--lilac-dim); border-radius: 8px; }
+
+  .msg { max-width: 92%; margin: 0 0 18px; }
+  .msg.oracle { padding-left: 22px; position: relative; }
+  .msg.oracle::before { content: "◈"; position: absolute; left: 0; top: 6px; color: var(--gold); font-size: 12px; }
+  .msg.oracle .body { font: 500 20px/1.45 var(--serif); color: var(--ink); white-space: pre-wrap; }
+  .msg.me { margin-left: auto; display: flex; justify-content: flex-end; }
+  .msg.me .body { display: inline-block; background: rgba(169,155,204,.12); border: 1px solid var(--line); border-radius: 14px 14px 4px 14px; padding: 9px 14px; color: var(--ink); font-size: 15px; white-space: pre-wrap; }
+  .tools { font-family: var(--mono); font-size: 11px; letter-spacing: .06em; color: var(--lilac-dim); margin-top: 6px; }
+  .tools:empty { display: none; }
+  .tools.error { color: var(--ember); }
+  .thinking { color: var(--lilac); font-style: italic; }
+  .thinking::after { content: "…"; display: inline; animation: dots 1.4s steps(4, end) infinite; }
+  @keyframes dots { 0% { opacity: .2; } 50% { opacity: 1; } 100% { opacity: .2; } }
+
+  form.chat { display: flex; gap: 10px; margin-top: 16px; }
+  form.chat input {
+    flex: 1; font: 16px var(--sans); color: var(--ink); background: #140d27; border: 1px solid var(--line);
+    border-radius: 999px; padding: 12px 18px; outline: none; transition: border-color .2s, box-shadow .2s;
+  }
+  form.chat input:focus { border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-soft); }
+  .ask {
+    font: 600 15px var(--sans); color: #1a1030; background: var(--gold); border: 0; border-radius: 999px;
+    padding: 12px 22px; cursor: pointer; transition: transform .1s, filter .2s;
+  }
+  .ask:hover { filter: brightness(1.06); } .ask:active { transform: translateY(1px); }
+  .ask:disabled { opacity: .45; cursor: wait; }
+  .session { margin: 10px 0 0; font-family: var(--mono); font-size: 11px; color: var(--lilac-dim); letter-spacing: .04em; }
+  .session code { color: var(--lilac); }
+
+  /* ---------- behind the curtain (models) ---------- */
+  .curtain { display: flex; flex-direction: column; gap: 16px; }
+  .curtain > header { padding: 0; display: block; }
+  .curtain h2 { margin: 0; font: italic 500 26px/1.1 var(--serif); }
+  .curtain .lede { margin: 4px 0 4px; color: var(--lilac); font-size: 14px; }
+  .card { background: var(--curtain); border: 1px solid var(--line); border-radius: 16px; padding: 18px 20px; }
+  .eyebrow { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; }
+  .eyebrow h3 { margin: 0; font: 600 15px var(--sans); color: var(--ink); }
+  .eyebrow span { font-family: var(--mono); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--lilac-dim); }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 12px; }
   .grid .wide { grid-column: 1 / -1; }
-  label { display:block; font-size:12px; color:var(--muted); margin-bottom:3px; }
-  .result { margin-top:10px; padding:10px; background:#120f1b; border-radius:8px; font-family: monospace; font-size:13px; white-space:pre-wrap; }
-  .disclaimer { color:var(--muted); font-size:12px; }
-  table { width:100%; border-collapse:collapse; font-size:14px; }
-  td, th { padding:6px 4px; border-bottom:1px solid #2e2742; text-align:left; }
-  td.num { text-align:right; font-family: monospace; }
-  .stat { font-size:32px; color:var(--accent); }
+  label { display: block; font-family: var(--mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--lilac-dim); margin-bottom: 4px; }
+  input, select, button { font: inherit; }
+  .card input, .card select {
+    width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line); background: #0d081a; color: var(--ink);
+    font-family: var(--sans); font-size: 14px; outline: none;
+  }
+  .card input:focus, .card select:focus { border-color: var(--lilac); box-shadow: 0 0 0 3px rgba(169,155,204,.15); }
+  .card select { appearance: none; background-image: linear-gradient(45deg, transparent 50%, var(--lilac) 50%), linear-gradient(135deg, var(--lilac) 50%, transparent 50%); background-position: calc(100% - 16px) 55%, calc(100% - 11px) 55%; background-size: 5px 5px; background-repeat: no-repeat; padding-right: 30px; }
+  .run { font: 600 14px var(--sans); color: var(--ink); background: transparent; border: 1px solid var(--lilac-dim); border-radius: 8px; padding: 8px 14px; cursor: pointer; transition: border-color .2s, background .2s; }
+  .run:hover { border-color: var(--gold); background: var(--gold-soft); }
+  .result { margin-top: 12px; font-family: var(--mono); font-size: 12.5px; line-height: 1.6; color: var(--lilac); white-space: pre-wrap; border-top: 1px dashed var(--line); padding-top: 10px; }
+  .result:empty { display: none; }
+  .result .big { display: block; font: 600 30px/1.1 var(--serif); color: var(--ink); margin-bottom: 4px; font-style: italic; }
+  .result.error { color: var(--ember); }
+
+  .stats { display: grid; grid-template-columns: auto 1fr; gap: 18px; align-items: start; }
+  .counter { text-align: center; padding: 6px 14px 0; border-right: 1px solid var(--line); }
+  .counter b { display: block; font: italic 600 44px/1 var(--serif); color: var(--gold); }
+  .counter span { font-family: var(--mono); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--lilac-dim); }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th { font-family: var(--mono); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--lilac-dim); text-align: left; padding: 0 4px 8px; font-weight: 500; }
+  td { padding: 6px 4px; border-top: 1px solid var(--line); }
+  td.rank { font-family: var(--mono); color: var(--lilac-dim); width: 28px; }
+  tr:first-child td.rank { color: var(--gold); }
+  td.num { text-align: right; font-family: var(--mono); color: var(--ink); }
+  .empty { color: var(--lilac-dim); font-style: italic; padding: 8px 4px; }
+
+  :focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) { .ball.thinking::before { animation: none; } .thinking::after { animation: none; } #log { scroll-behavior: auto; } }
 </style>
 </head>
 <body>
 <header>
-  <div><h1>🔮 The Oracle</h1><small>Day 1 of the DevOps &amp; MLOps course</small></div>
-  <div><a href="/docs" target="_blank">API docs</a> &middot; <a href="/health" target="_blank">health</a></div>
+  <div class="brand"><h1>The Oracle</h1><small>Day 1 · DevOps &amp; MLOps for ML engineers</small></div>
+  <nav><a href="/docs" target="_blank">API docs</a><a href="/health" target="_blank">health</a></nav>
 </header>
 
 <main>
-  <section class="panel">
+  <section class="seance" aria-label="Chat with the Oracle">
     <h2>Consult the Oracle</h2>
-    <div id="log"></div>
+    <p class="lede">A fortune teller with three instruments: the stars, a salary model, and a very silly wedding model.</p>
+    <div class="ball" id="ball"><div id="log" role="log" aria-live="polite"></div></div>
     <form class="chat" id="chat-form">
-      <input id="chat-input" placeholder="Tell the Oracle your name..." autocomplete="off" required>
-      <button id="chat-send" type="submit">Send</button>
+      <input id="chat-input" placeholder="Tell the Oracle your name…" autocomplete="off" required aria-label="Your message">
+      <button class="ask" id="chat-send" type="submit">Ask</button>
     </form>
-    <p class="disclaimer">Session <code id="session-id"></code>. Memory lives in the server process and is lost on restart.</p>
+    <p class="session">session <code id="session-id"></code> · memory lives in the server process and is lost on restart</p>
   </section>
 
-  <section class="panel">
-    <h2>Talk to the models directly</h2>
+  <section class="curtain" aria-label="Call the models directly">
+    <header>
+      <h2>Behind the curtain</h2>
+      <p class="lede">The same endpoints the Oracle calls, without the theatre.</p>
+    </header>
 
-    <h3>Income predictor (survey data)</h3>
-    <form id="income-form" class="grid">
-      <div><label>Name (for leaderboard)</label><input name="name" maxlength="40"></div>
-      <div><label>Country</label><select name="country" data-options="countries"></select></div>
-      <div><label>Years professional</label><input name="years_pro" type="number" min="0" max="50" value="5" required></div>
-      <div><label>Age band</label><select name="age_band" data-options="age_bands"></select></div>
-      <div class="wide"><label>Education</label><select name="ed_level" data-options="ed_levels"></select></div>
-      <div class="wide"><label>Role</label><select name="dev_type" data-options="dev_types"></select></div>
-      <div class="wide"><label>Remote work</label><select name="remote_work" data-options="remote_work"></select></div>
-      <div class="wide"><label>Company size</label><select name="org_size" data-options="org_sizes"></select></div>
-      <div class="wide"><label>Languages (comma separated)</label><input name="languages" value="Python, SQL"></div>
-      <div class="wide"><button type="submit">Predict income</button></div>
-    </form>
-    <div class="result" id="income-result"></div>
+    <div class="card">
+      <div class="eyebrow"><h3>Income predictor</h3><span>survey data · POST /predict/income</span></div>
+      <form id="income-form" class="grid">
+        <div><label>Name (for the leaderboard)</label><input name="name" maxlength="40"></div>
+        <div><label>Country</label><select name="country" data-options="countries"></select></div>
+        <div><label>Years professional</label><input name="years_pro" type="number" min="0" max="50" value="5" required></div>
+        <div><label>Age band</label><select name="age_band" data-options="age_bands"></select></div>
+        <div class="wide"><label>Education</label><select name="ed_level" data-options="ed_levels"></select></div>
+        <div class="wide"><label>Role</label><select name="dev_type" data-options="dev_types"></select></div>
+        <div><label>Remote work</label><select name="remote_work" data-options="remote_work"></select></div>
+        <div><label>Company size</label><select name="org_size" data-options="org_sizes"></select></div>
+        <div class="wide"><label>Languages (comma separated)</label><input name="languages" value="Python, SQL"></div>
+        <div class="wide"><button class="run" type="submit">Predict income</button></div>
+      </form>
+      <div class="result" id="income-result"></div>
+    </div>
 
-    <h3>Marriage date predictor (invented data)</h3>
-    <form id="marriage-form" class="grid">
-      <div><label>Age</label><input name="age" type="number" min="18" max="100" value="30" required></div>
-      <div><label>Status</label><select name="relationship_status" data-options="relationship_statuses"></select></div>
-      <div><label>Coffee cups / day</label><input name="coffee_cups_per_day" type="number" min="0" max="20" value="2" required></div>
-      <div><label>Coding hours / week</label><input name="coding_hours_per_week" type="number" min="0" max="100" value="40" required></div>
-      <div><label>Side projects</label><input name="side_projects" type="number" min="0" max="50" value="1" required></div>
-      <div><label>Unread Slack messages</label><input name="unread_slack_messages" type="number" min="0" max="100000" value="42" required></div>
-      <div class="wide"><button type="submit">Predict wedding date</button></div>
-    </form>
-    <div class="result" id="marriage-result"></div>
+    <div class="card">
+      <div class="eyebrow"><h3>Wedding date predictor</h3><span>invented data · POST /predict/marriage</span></div>
+      <form id="marriage-form" class="grid">
+        <div><label>Age</label><input name="age" type="number" min="18" max="100" value="30" required></div>
+        <div><label>Status</label><select name="relationship_status" data-options="relationship_statuses"></select></div>
+        <div><label>Coffee cups a day</label><input name="coffee_cups_per_day" type="number" min="0" max="20" value="2" required></div>
+        <div><label>Coding hours a week</label><input name="coding_hours_per_week" type="number" min="0" max="100" value="40" required></div>
+        <div><label>Side projects</label><input name="side_projects" type="number" min="0" max="50" value="1" required></div>
+        <div><label>Unread Slack messages</label><input name="unread_slack_messages" type="number" min="0" max="100000" value="42" required></div>
+        <div class="wide"><button class="run" type="submit">Predict wedding date</button></div>
+      </form>
+      <div class="result" id="marriage-result"></div>
+    </div>
 
-    <h3>Horoscope (no ML)</h3>
-    <form id="horoscope-form" class="grid">
-      <div><label>Birthday</label><input name="birthday" type="date" value="1990-08-15" required></div>
-      <div style="align-self:end"><button type="submit">Read the stars</button></div>
-    </form>
-    <div class="result" id="horoscope-result"></div>
+    <div class="card">
+      <div class="eyebrow"><h3>Horoscope</h3><span>no ML · GET /horoscope</span></div>
+      <form id="horoscope-form" class="grid">
+        <div><label>Birthday</label><input name="birthday" type="date" value="1990-08-15" required></div>
+        <div style="align-self:end"><button class="run" type="submit">Read the stars</button></div>
+      </form>
+      <div class="result" id="horoscope-result"></div>
+    </div>
 
-    <h3>Stats</h3>
-    <div>Fortunes told: <span class="stat" id="fortunes">0</span></div>
-    <table id="leaderboard"><thead><tr><th>#</th><th>Name</th><th>Predicted income</th></tr></thead><tbody></tbody></table>
+    <div class="card">
+      <div class="eyebrow"><h3>Tonight's audience</h3><span>in memory · GET /stats</span></div>
+      <div class="stats">
+        <div class="counter"><b id="fortunes">0</b><span>fortunes told</span></div>
+        <table id="leaderboard" aria-label="Highest predicted incomes">
+          <thead><tr><th>#</th><th>Name</th><th style="text-align:right">Predicted income</th></tr></thead>
+          <tbody><tr><td colspan="3" class="empty">No one has asked yet. Put your name in the income form.</td></tr></tbody>
+        </table>
+      </div>
+    </div>
   </section>
 </main>
 
 <script>
 const $ = (sel) => document.querySelector(sel);
 const usd = (n) => n.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
+const ball = $("#ball");
 
 // One session id per browser tab, kept across reloads in sessionStorage. The server keys
 // chat memory on it, so a reload shows an empty log while the Oracle still remembers you.
@@ -125,6 +258,7 @@ function addMessage(text, who, tools) {
   const div = document.createElement("div");
   div.className = `msg ${who}`;
   const body = document.createElement("span");
+  body.className = "body";
   body.textContent = text;
   div.appendChild(body);
   const status = document.createElement("div");
@@ -179,31 +313,37 @@ $("#chat-form").addEventListener("submit", async (ev) => {
   addMessage(message, "me");
   input.value = "";
   $("#chat-send").disabled = true;
+  ball.classList.add("thinking");
   const reply = addMessage("", "oracle");
-  reply.body.className = "thinking";
-  reply.body.textContent = "The Oracle gazes into the crystal ball\u2026";
+  reply.body.classList.add("thinking");
+  reply.body.textContent = "The Oracle gazes into the crystal ball";
   let text = "";
   try {
     await streamChat(message, ({ event, data }) => {
       if (event === "token") {
         text += data.text;
-        reply.body.className = "";
+        reply.body.classList.remove("thinking");
         reply.body.textContent = text;
       } else if (event === "tool") {
-        reply.status.textContent = "consulting " + data.name + "\u2026";
+        ball.classList.add("consulting");
+        reply.status.textContent = "consulting " + data.name + "…";
       } else if (event === "done") {
         reply.status.textContent = data.tools_used.length ? "tools used: " + data.tools_used.join(", ") : "";
       } else if (event === "error") {
-        reply.body.className = "";
-        reply.body.textContent = text || "The Oracle is silent: " + data.detail;
-        reply.status.textContent = "error: " + data.detail;
+        reply.body.classList.remove("thinking");
+        reply.body.textContent = text || "The Oracle is silent.";
+        reply.status.classList.add("error");
+        reply.status.textContent = data.detail;
       }
       $("#log").scrollTop = $("#log").scrollHeight;
     });
   } catch (err) {
-    reply.body.className = "";
-    reply.body.textContent = "The Oracle is silent: " + err.message;
+    reply.body.classList.remove("thinking");
+    reply.body.textContent = "The Oracle is silent.";
+    reply.status.classList.add("error");
+    reply.status.textContent = err.message;
   } finally {
+    ball.classList.remove("thinking", "consulting");
     $("#chat-send").disabled = false;
     input.focus();
     refreshStats();
@@ -219,6 +359,16 @@ function formToObject(form) {
   return data;
 }
 
+function showResult(id, big, lines) {
+  const box = $(id);
+  box.classList.remove("error");
+  box.replaceChildren();
+  const b = document.createElement("span"); b.className = "big"; b.textContent = big;
+  box.appendChild(b);
+  box.appendChild(document.createTextNode(lines.join("\n")));
+}
+function showError(id, err) { const box = $(id); box.classList.add("error"); box.textContent = "Error: " + err.message; }
+
 $("#income-form").addEventListener("submit", async (ev) => {
   ev.preventDefault();
   const data = formToObject(ev.target);
@@ -226,8 +376,8 @@ $("#income-form").addEventListener("submit", async (ev) => {
   if (!data.name) delete data.name;
   try {
     const res = await api("/predict/income", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
-    $("#income-result").textContent = `${usd(res.predicted_income_usd)} per year\nmodel: ${res.model_version}\n${res.disclaimer}`;
-  } catch (err) { $("#income-result").textContent = "Error: " + err.message; }
+    showResult("#income-result", usd(res.predicted_income_usd) + " a year", ["model " + res.model_version, res.disclaimer]);
+  } catch (err) { showError("#income-result", err); }
   refreshStats();
 });
 
@@ -235,8 +385,8 @@ $("#marriage-form").addEventListener("submit", async (ev) => {
   ev.preventDefault();
   try {
     const res = await api("/predict/marriage", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(formToObject(ev.target)) });
-    $("#marriage-result").textContent = `${res.predicted_date} (${res.years_from_now} years from now)\nmodel: ${res.model_version}\n${res.disclaimer}`;
-  } catch (err) { $("#marriage-result").textContent = "Error: " + err.message; }
+    showResult("#marriage-result", res.predicted_date, [res.years_from_now + " years from now", "model " + res.model_version, res.disclaimer]);
+  } catch (err) { showError("#marriage-result", err); }
   refreshStats();
 });
 
@@ -244,8 +394,8 @@ $("#horoscope-form").addEventListener("submit", async (ev) => {
   ev.preventDefault();
   try {
     const res = await api("/horoscope?birthday=" + encodeURIComponent(ev.target.birthday.value));
-    $("#horoscope-result").textContent = `${res.sign}: ${res.message}`;
-  } catch (err) { $("#horoscope-result").textContent = "Error: " + err.message; }
+    showResult("#horoscope-result", res.sign, [res.message]);
+  } catch (err) { showError("#horoscope-result", err); }
   refreshStats();
 });
 
@@ -254,11 +404,19 @@ async function refreshStats() {
     const s = await api("/stats");
     $("#fortunes").textContent = s.fortunes_told;
     const tbody = $("#leaderboard tbody");
-    tbody.innerHTML = "";
+    tbody.replaceChildren();
+    if (!s.leaderboard.length) {
+      const tr = document.createElement("tr");
+      tr.innerHTML = '<td colspan="3" class="empty">No one has asked yet. Put your name in the income form.</td>';
+      tbody.appendChild(tr);
+      return;
+    }
     s.leaderboard.forEach((e, i) => {
       const tr = document.createElement("tr");
-      tr.innerHTML = `<td>${i + 1}</td><td></td><td class="num">${usd(e.predicted_income_usd)}</td>`;
+      tr.innerHTML = '<td class="rank"></td><td></td><td class="num"></td>';
+      tr.children[0].textContent = i + 1;
       tr.children[1].textContent = e.name;
+      tr.children[2].textContent = usd(e.predicted_income_usd);
       tbody.appendChild(tr);
     });
   } catch (e) { /* stats are decorative */ }
