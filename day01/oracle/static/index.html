@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Oracle</title>
+<style>
+  :root { --bg:#14111f; --panel:#1f1a2e; --ink:#f3eefb; --muted:#b7aacb; --accent:#f5b942; --accent2:#7c5cff; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family: Georgia, "Times New Roman", serif; background:var(--bg); color:var(--ink); }
+  header { padding:20px 28px; border-bottom:1px solid #2e2742; display:flex; justify-content:space-between; align-items:baseline; }
+  header h1 { margin:0; font-size:28px; color:var(--accent); letter-spacing:1px; }
+  header small { color:var(--muted); }
+  header a { color:var(--muted); }
+  main { display:grid; grid-template-columns: 1.1fr 1fr; gap:20px; padding:20px 28px; }
+  @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
+  .panel { background:var(--panel); border:1px solid #2e2742; border-radius:12px; padding:18px; }
+  h2 { margin:0 0 12px; font-size:18px; color:var(--accent); }
+  h3 { margin:18px 0 8px; font-size:15px; color:var(--muted); text-transform:uppercase; letter-spacing:1px; }
+  #log { height:52vh; overflow-y:auto; padding:8px; background:#120f1b; border-radius:8px; }
+  .msg { margin:8px 0; padding:10px 12px; border-radius:10px; max-width:90%; white-space:pre-wrap; line-height:1.4; }
+  .me { background:#2a2440; margin-left:auto; }
+  .oracle { background:#2b1d4d; border-left:3px solid var(--accent); }
+  .tools { font-size:12px; color:var(--muted); margin-top:6px; font-family: monospace; }
+  form.chat { display:flex; gap:8px; margin-top:10px; }
+  input, select, button { font: inherit; }
+  input, select { width:100%; padding:8px; border-radius:6px; border:1px solid #3a3352; background:#120f1b; color:var(--ink); }
+  button { padding:8px 14px; border-radius:6px; border:0; background:var(--accent2); color:white; cursor:pointer; }
+  button:disabled { opacity:.5; cursor:wait; }
+  .grid { display:grid; grid-template-columns: 1fr 1fr; gap:8px; }
+  .grid .wide { grid-column: 1 / -1; }
+  label { display:block; font-size:12px; color:var(--muted); margin-bottom:3px; }
+  .result { margin-top:10px; padding:10px; background:#120f1b; border-radius:8px; font-family: monospace; font-size:13px; white-space:pre-wrap; }
+  .disclaimer { color:var(--muted); font-size:12px; }
+  table { width:100%; border-collapse:collapse; font-size:14px; }
+  td, th { padding:6px 4px; border-bottom:1px solid #2e2742; text-align:left; }
+  td.num { text-align:right; font-family: monospace; }
+  .stat { font-size:32px; color:var(--accent); }
+</style>
+</head>
+<body>
+<header>
+  <div><h1>🔮 The Oracle</h1><small>Day 1 of the DevOps &amp; MLOps course</small></div>
+  <div><a href="/docs" target="_blank">API docs</a> &middot; <a href="/health" target="_blank">health</a></div>
+</header>
+
+<main>
+  <section class="panel">
+    <h2>Consult the Oracle</h2>
+    <div id="log"></div>
+    <form class="chat" id="chat-form">
+      <input id="chat-input" placeholder="Tell the Oracle your name..." autocomplete="off" required>
+      <button id="chat-send" type="submit">Send</button>
+    </form>
+    <p class="disclaimer">Session <code id="session-id"></code>. Memory lives in the server process and is lost on restart.</p>
+  </section>
+
+  <section class="panel">
+    <h2>Talk to the models directly</h2>
+
+    <h3>Income predictor (survey data)</h3>
+    <form id="income-form" class="grid">
+      <div><label>Name (for leaderboard)</label><input name="name" maxlength="40"></div>
+      <div><label>Country</label><select name="country" data-options="countries"></select></div>
+      <div><label>Years professional</label><input name="years_pro" type="number" min="0" max="50" value="5" required></div>
+      <div><label>Age band</label><select name="age_band" data-options="age_bands"></select></div>
+      <div class="wide"><label>Education</label><select name="ed_level" data-options="ed_levels"></select></div>
+      <div class="wide"><label>Role</label><select name="dev_type" data-options="dev_types"></select></div>
+      <div class="wide"><label>Remote work</label><select name="remote_work" data-options="remote_work"></select></div>
+      <div class="wide"><label>Company size</label><select name="org_size" data-options="org_sizes"></select></div>
+      <div class="wide"><label>Languages (comma separated)</label><input name="languages" value="Python, SQL"></div>
+      <div class="wide"><button type="submit">Predict income</button></div>
+    </form>
+    <div class="result" id="income-result"></div>
+
+    <h3>Marriage date predictor (invented data)</h3>
+    <form id="marriage-form" class="grid">
+      <div><label>Age</label><input name="age" type="number" min="18" max="100" value="30" required></div>
+      <div><label>Status</label><select name="relationship_status" data-options="relationship_statuses"></select></div>
+      <div><label>Coffee cups / day</label><input name="coffee_cups_per_day" type="number" min="0" max="20" value="2" required></div>
+      <div><label>Coding hours / week</label><input name="coding_hours_per_week" type="number" min="0" max="100" value="40" required></div>
+      <div><label>Side projects</label><input name="side_projects" type="number" min="0" max="50" value="1" required></div>
+      <div><label>Unread Slack messages</label><input name="unread_slack_messages" type="number" min="0" max="100000" value="42" required></div>
+      <div class="wide"><button type="submit">Predict wedding date</button></div>
+    </form>
+    <div class="result" id="marriage-result"></div>
+
+    <h3>Horoscope (no ML)</h3>
+    <form id="horoscope-form" class="grid">
+      <div><label>Birthday</label><input name="birthday" type="date" value="1990-08-15" required></div>
+      <div style="align-self:end"><button type="submit">Read the stars</button></div>
+    </form>
+    <div class="result" id="horoscope-result"></div>
+
+    <h3>Stats</h3>
+    <div>Fortunes told: <span class="stat" id="fortunes">0</span></div>
+    <table id="leaderboard"><thead><tr><th>#</th><th>Name</th><th>Predicted income</th></tr></thead><tbody></tbody></table>
+  </section>
+</main>
+
+<script>
+const $ = (sel) => document.querySelector(sel);
+const usd = (n) => n.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
+
+// One session id per browser tab, kept across reloads in sessionStorage. The server keys
+// chat memory on it, so a reload shows an empty log while the Oracle still remembers you.
+let sessionId;
+try {
+  sessionId = sessionStorage.getItem("oracle-session");
+  if (!sessionId) { sessionId = crypto.randomUUID(); sessionStorage.setItem("oracle-session", sessionId); }
+} catch (e) { sessionId = crypto.randomUUID(); }
+$("#session-id").textContent = sessionId.slice(0, 8);
+
+async function api(path, options) {
+  const r = await fetch(path, options);
+  const body = await r.json();
+  if (!r.ok) throw new Error(body.detail ? JSON.stringify(body.detail) : r.statusText);
+  return body;
+}
+
+function addMessage(text, who, tools) {
+  const div = document.createElement("div");
+  div.className = `msg ${who}`;
+  div.textContent = text;
+  if (tools && tools.length) {
+    const t = document.createElement("div");
+    t.className = "tools";
+    t.textContent = "tools used: " + tools.join(", ");
+    div.appendChild(t);
+  }
+  $("#log").appendChild(div);
+  $("#log").scrollTop = $("#log").scrollHeight;
+}
+
+$("#chat-form").addEventListener("submit", async (ev) => {
+  ev.preventDefault();
+  const input = $("#chat-input");
+  const message = input.value.trim();
+  if (!message) return;
+  addMessage(message, "me");
+  input.value = "";
+  $("#chat-send").disabled = true;
+  try {
+    const res = await api("/chat", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ session_id: sessionId, message }),
+    });
+    addMessage(res.reply, "oracle", res.tools_used);
+  } catch (err) {
+    addMessage("The Oracle is silent: " + err.message, "oracle");
+  } finally {
+    $("#chat-send").disabled = false;
+    input.focus();
+    refreshStats();
+  }
+});
+
+function formToObject(form) {
+  const data = {};
+  for (const [k, v] of new FormData(form).entries()) {
+    const el = form.elements[k];
+    data[k] = el.type === "number" ? Number(v) : v;
+  }
+  return data;
+}
+
+$("#income-form").addEventListener("submit", async (ev) => {
+  ev.preventDefault();
+  const data = formToObject(ev.target);
+  data.languages = data.languages.split(",").map((s) => s.trim()).filter(Boolean);
+  if (!data.name) delete data.name;
+  try {
+    const res = await api("/predict/income", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
+    $("#income-result").textContent = `${usd(res.predicted_income_usd)} per year\nmodel: ${res.model_version}\n${res.disclaimer}`;
+  } catch (err) { $("#income-result").textContent = "Error: " + err.message; }
+  refreshStats();
+});
+
+$("#marriage-form").addEventListener("submit", async (ev) => {
+  ev.preventDefault();
+  try {
+    const res = await api("/predict/marriage", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(formToObject(ev.target)) });
+    $("#marriage-result").textContent = `${res.predicted_date} (${res.years_from_now} years from now)\nmodel: ${res.model_version}\n${res.disclaimer}`;
+  } catch (err) { $("#marriage-result").textContent = "Error: " + err.message; }
+  refreshStats();
+});
+
+$("#horoscope-form").addEventListener("submit", async (ev) => {
+  ev.preventDefault();
+  try {
+    const res = await api("/horoscope?birthday=" + encodeURIComponent(ev.target.birthday.value));
+    $("#horoscope-result").textContent = `${res.sign}: ${res.message}`;
+  } catch (err) { $("#horoscope-result").textContent = "Error: " + err.message; }
+  refreshStats();
+});
+
+async function refreshStats() {
+  try {
+    const s = await api("/stats");
+    $("#fortunes").textContent = s.fortunes_told;
+    const tbody = $("#leaderboard tbody");
+    tbody.innerHTML = "";
+    s.leaderboard.forEach((e, i) => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td>${i + 1}</td><td></td><td class="num">${usd(e.predicted_income_usd)}</td>`;
+      tr.children[1].textContent = e.name;
+      tbody.appendChild(tr);
+    });
+  } catch (e) { /* stats are decorative */ }
+}
+
+async function loadOptions() {
+  const opts = await api("/options");
+  document.querySelectorAll("select[data-options]").forEach((sel) => {
+    const values = opts[sel.dataset.options] || [];
+    sel.replaceChildren(...values.map((v) => new Option(v)));
+  });
+}
+
+loadOptions().then(refreshStats);
+addMessage("Welcome, seeker. Tell me your name, and we shall begin.", "oracle");
+</script>
+</body>
+</html>

@@ -1,0 +1,27 @@
+{
+  "model_version": "income-v1-20260902",
+  "trained_at": "2026-09-02T08:34:10+00:00",
+  "n_train": 14292,
+  "n_test": 3573,
+  "mae_usd": 29150.75185797571,
+  "median_abs_pct_error": 0.2522277496422235,
+  "feature_columns": [
+    "country",
+    "ed_level",
+    "dev_type",
+    "remote_work",
+    "age_band",
+    "org_size",
+    "years_pro",
+    "lang_python",
+    "lang_sql",
+    "lang_javascript",
+    "lang_typescript",
+    "lang_java",
+    "lang_csharp",
+    "lang_cpp",
+    "lang_go",
+    "lang_rust",
+    "lang_bash"
+  ]
+}
