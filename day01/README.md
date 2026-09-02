@@ -148,4 +148,8 @@ make lint        # ruff check + format check
 make train       # rebuild the slim CSV and both model artifacts. The first run downloads the
                  # 141 MB raw survey file. You do not need this to run the app.
 make probe       # check that your OpenRouter model can call tools
+make docker-build   # build the image oracle:day1 (Docker Desktop must be running)
+make docker-run     # run it on port 8000 with the key from .env
 ```
+
+The handout `docker-explained.html` in this folder walks through the Dockerfile line by line.

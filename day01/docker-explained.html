@@ -261,7 +261,7 @@
     <div class="word"><dt>container</dt><dd>A running copy of an image. Start it, stop it, throw it away; the image is untouched. Run many from one image.</dd></div>
     <div class="word"><dt>layer</dt><dd>Each line in the Dockerfile adds one layer to the image. Unchanged layers are cached, so rebuilds only redo what changed.</dd></div>
     <div class="word"><dt>registry</dt><dd>A place to push images so other machines can pull them. Docker Hub, GitHub Container Registry, every cloud has one. Git for images.</dd></div>
-    <div class="word"><dt>tag</dt><dd>A label on an image, like <code>oracle:day2</code>. Use something meaningful; <code>latest</code> tells nobody what they are running.</dd></div>
+    <div class="word"><dt>tag</dt><dd>A label on an image, like <code>oracle:day1</code>. Use something meaningful; <code>latest</code> tells nobody what they are running.</dd></div>
   </dl>
 
   <figure>
@@ -362,14 +362,14 @@
 <section id="commands">
   <h2><small>06</small>Build, run, look, ship</h2>
   <div class="cmds">
-    <div class="cmd"><pre>docker build -t oracle:day2 .</pre><div class="why"><b>recipe → image</b>Reads the Dockerfile in this folder, produces an image tagged <code>oracle:day2</code>.</div></div>
+    <div class="cmd"><pre>docker build -t oracle:day1 .</pre><div class="why"><b>recipe → image</b>Reads the Dockerfile in this folder, produces an image tagged <code>oracle:day1</code>.</div></div>
     <div class="cmd"><pre>docker run --rm -p 8000:8000 \
-  --env-file .env oracle:day2</pre><div class="why"><b>image → container</b>Starts one container, maps the port, hands in the key. <code>--rm</code> deletes it when it stops.</div></div>
+  --env-file .env oracle:day1</pre><div class="why"><b>image → container</b>Starts one container, maps the port, hands in the key. <code>--rm</code> deletes it when it stops.</div></div>
     <div class="cmd"><pre>docker ps
 docker logs -f NAME
 docker stop NAME</pre><div class="why"><b>look</b>What is running, what it is saying, and how to stop it.</div></div>
-    <div class="cmd"><pre>docker tag oracle:day2 ghcr.io/YOU/oracle:day2
-docker push ghcr.io/YOU/oracle:day2</pre><div class="why"><b>ship</b>Name it for a registry and push. Any machine can now pull it.</div></div>
+    <div class="cmd"><pre>docker tag oracle:day1 ghcr.io/YOU/oracle:day1
+docker push ghcr.io/YOU/oracle:day1</pre><div class="why"><b>ship</b>Name it for a registry and push. Any machine can now pull it.</div></div>
   </div>
   <p><code>-p 8000:8000</code> reads "host port : container port". The <code>.env</code> file is never copied into the image. List <code>.env</code>, <code>.venv</code>, and <code>data/raw</code> in <code>.dockerignore</code> so they are not even sent to the build.</p>
 </section>

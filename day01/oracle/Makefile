@@ -1,4 +1,4 @@
-.PHONY: install run train test lint probe
+.PHONY: install run train test lint probe docker-build docker-run
 
 install:
 	uv sync
@@ -19,3 +19,9 @@ lint:
 
 probe:
 	uv run python -m scripts.probe_llm
+
+docker-build:
+	docker build -t oracle:day1 .
+
+docker-run:
+	docker run --rm -p 8000:8000 --env-file .env oracle:day1
