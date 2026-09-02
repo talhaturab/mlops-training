@@ -22,6 +22,9 @@
   .me { background:#2a2440; margin-left:auto; }
   .oracle { background:#2b1d4d; border-left:3px solid var(--accent); }
   .tools { font-size:12px; color:var(--muted); margin-top:6px; font-family: monospace; }
+  .tools:empty { display:none; }
+  .thinking { color:var(--muted); font-style:italic; animation: pulse 1.2s ease-in-out infinite; }
+  @keyframes pulse { 0%,100% { opacity:.5; } 50% { opacity:1; } }
   form.chat { display:flex; gap:8px; margin-top:10px; }
   input, select, button { font: inherit; }
   input, select { width:100%; padding:8px; border-radius:6px; border:1px solid #3a3352; background:#120f1b; color:var(--ink); }
@@ -121,15 +124,51 @@ async function api(path, options) {
 function addMessage(text, who, tools) {
   const div = document.createElement("div");
   div.className = `msg ${who}`;
-  div.textContent = text;
-  if (tools && tools.length) {
-    const t = document.createElement("div");
-    t.className = "tools";
-    t.textContent = "tools used: " + tools.join(", ");
-    div.appendChild(t);
-  }
+  const body = document.createElement("span");
+  body.textContent = text;
+  div.appendChild(body);
+  const status = document.createElement("div");
+  status.className = "tools";
+  div.appendChild(status);
+  if (tools && tools.length) status.textContent = "tools used: " + tools.join(", ");
   $("#log").appendChild(div);
   $("#log").scrollTop = $("#log").scrollHeight;
+  return { body, status };
+}
+
+// Parse one "event: name\ndata: {...}" block from a Server-Sent Events stream.
+function parseEvent(block) {
+  let event = "message", data = "";
+  for (const line of block.split("\n")) {
+    if (line.startsWith("event: ")) event = line.slice(7);
+    else if (line.startsWith("data: ")) data += line.slice(6);
+  }
+  return { event, data: data ? JSON.parse(data) : {} };
+}
+
+// POST the message and read the reply token by token as the server pushes it.
+async function streamChat(message, onEvent) {
+  const res = await fetch("/chat/stream", {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ session_id: sessionId, message }),
+  });
+  if (!res.ok) {
+    const body = await res.json();
+    throw new Error(body.detail ? JSON.stringify(body.detail) : res.statusText);
+  }
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  while (true) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    let end;
+    while ((end = buffer.indexOf("\n\n")) >= 0) {
+      onEvent(parseEvent(buffer.slice(0, end)));
+      buffer = buffer.slice(end + 2);
+    }
+  }
 }
 
 $("#chat-form").addEventListener("submit", async (ev) => {
@@ -140,14 +179,30 @@ $("#chat-form").addEventListener("submit", async (ev) => {
   addMessage(message, "me");
   input.value = "";
   $("#chat-send").disabled = true;
+  const reply = addMessage("", "oracle");
+  reply.body.className = "thinking";
+  reply.body.textContent = "The Oracle gazes into the crystal ball\u2026";
+  let text = "";
   try {
-    const res = await api("/chat", {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ session_id: sessionId, message }),
+    await streamChat(message, ({ event, data }) => {
+      if (event === "token") {
+        text += data.text;
+        reply.body.className = "";
+        reply.body.textContent = text;
+      } else if (event === "tool") {
+        reply.status.textContent = "consulting " + data.name + "\u2026";
+      } else if (event === "done") {
+        reply.status.textContent = data.tools_used.length ? "tools used: " + data.tools_used.join(", ") : "";
+      } else if (event === "error") {
+        reply.body.className = "";
+        reply.body.textContent = text || "The Oracle is silent: " + data.detail;
+        reply.status.textContent = "error: " + data.detail;
+      }
+      $("#log").scrollTop = $("#log").scrollHeight;
     });
-    addMessage(res.reply, "oracle", res.tools_used);
   } catch (err) {
-    addMessage("The Oracle is silent: " + err.message, "oracle");
+    reply.body.className = "";
+    reply.body.textContent = "The Oracle is silent: " + err.message;
   } finally {
     $("#chat-send").disabled = false;
     input.focus();

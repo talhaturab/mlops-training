@@ -18,9 +18,13 @@ class Settings(BaseSettings):
     )
 
     openrouter_api_key: str | None = None
-    llm_model: str = "nvidia/nemotron-3-ultra-550b-a55b:free"
+    llm_model: str = "poolside/laguna-s-2.1:free"
     llm_base_url: str = "https://openrouter.ai/api/v1"
     model_api_url: str = "http://localhost:8000"
+    # Reasoning models think before answering; that costs seconds. off | low | medium | high
+    llm_reasoning: str = "low"
+    # Free-tier providers fail transiently; retry the model call this many times in total.
+    llm_max_attempts: int = 3
     artifacts_dir: Path = PROJECT_DIR / "artifacts"
 
     @property

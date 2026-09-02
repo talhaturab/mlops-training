@@ -63,3 +63,28 @@ async def test_graph_keeps_history_per_thread():
 def test_system_prompt_mentions_disclaimers():
     assert "invented" in SYSTEM_PROMPT.lower()
     assert "survey" in SYSTEM_PROMPT.lower()
+
+
+async def test_graph_retries_transient_model_failures():
+    class FlakyModel(ScriptedChatModel):
+        failures_left: int = 2
+
+        def _generate(self, messages, stop=None, run_manager=None, **kwargs):
+            if self.failures_left > 0:
+                self.failures_left -= 1
+                raise RuntimeError("Service temporarily overloaded")
+            return super()._generate(messages, stop=stop, run_manager=run_manager, **kwargs)
+
+    llm = FlakyModel(responses=[AIMessage(content="Third time lucky.")])
+    graph = build_graph(llm, [get_horoscope], InMemorySaver(), max_attempts=3)
+    result = await graph.ainvoke(
+        {"messages": [HumanMessage(content="hi")]}, {"configurable": {"thread_id": "r1"}}
+    )
+    assert result["messages"][-1].content == "Third time lucky."
+
+
+def test_reasoning_body_levels():
+    from app.agent.graph import reasoning_body
+
+    assert reasoning_body("off") == {"reasoning": {"enabled": False}}
+    assert reasoning_body("low") == {"reasoning": {"effort": "low"}}

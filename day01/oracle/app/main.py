@@ -24,7 +24,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         app.state.store = StatsStore()
         set_api_base_url(settings.model_api_url)
         if settings.llm_configured:
-            app.state.graph = build_graph(create_llm(settings), ORACLE_TOOLS, InMemorySaver())
+            app.state.graph = build_graph(
+                create_llm(settings),
+                ORACLE_TOOLS,
+                InMemorySaver(),
+                max_attempts=settings.llm_max_attempts,
+            )
         else:
             app.state.graph = None
         yield

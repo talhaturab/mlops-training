@@ -95,7 +95,9 @@ model registry day fixes.
 | Variable            | Default                          | Purpose                                  |
 |---------------------|----------------------------------|------------------------------------------|
 | OPENROUTER_API_KEY  | none, required for /chat         | LLM key                                  |
-| LLM_MODEL           | nvidia/nemotron-3-ultra-550b-a55b:free | OpenRouter model id               |
+| LLM_MODEL           | poolside/laguna-s-2.1:free       | OpenRouter model id (changed 2026-09-02 from nvidia/nemotron-3-ultra-550b-a55b:free, which was slow and overloaded) |
+| LLM_REASONING       | low                              | reasoning effort for thinking models: off, low, medium, high |
+| LLM_MAX_ATTEMPTS    | 3                                | retries per model call for transient provider failures |
 | LLM_BASE_URL        | https://openrouter.ai/api/v1     | OpenAI-compatible endpoint               |
 | MODEL_API_URL       | http://localhost:8000            | where agent tools find the predict API   |
 | ARTIFACTS_DIR       | ./artifacts                      | where joblib files are loaded from       |
@@ -189,6 +191,7 @@ All request and response bodies are Pydantic models in `schemas.py`.
 | GET    | /                 |                                           | static/index.html                                           |
 | GET    | /health           |                                           | {status, models_loaded, llm_configured}                     |
 | POST   | /chat             | {session_id, message}                     | {reply, tools_used: [str]}                                  |
+| POST   | /chat/stream      | {session_id, message}                     | text/event-stream: token {text}, tool {name}, error {detail}, done {tools_used} |
 | POST   | /predict/income   | IncomeRequest                             | {predicted_income_usd, model_version, disclaimer}           |
 | POST   | /predict/marriage | MarriageRequest                           | {predicted_date, years_from_now, model_version, disclaimer} |
 | GET    | /horoscope        | ?birthday=YYYY-MM-DD                      | {sign, message}                                             |

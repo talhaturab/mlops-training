@@ -62,3 +62,54 @@ def test_chat_tools_used_only_counts_this_turn(client, app):
 
 def test_chat_validates_input(client):
     assert client.post("/chat", json={"session_id": "", "message": "x"}).status_code == 422
+
+
+def _read_events(response) -> list[tuple[str, dict]]:
+    import json
+
+    events, current = [], {}
+    for line in response.iter_lines():
+        if line.startswith("event: "):
+            current["event"] = line[len("event: ") :]
+        elif line.startswith("data: "):
+            current["data"] = json.loads(line[len("data: ") :])
+        elif line == "" and current:
+            events.append((current["event"], current["data"]))
+            current = {}
+    return events
+
+
+def test_chat_stream_returns_503_without_llm_key(client):
+    r = client.post("/chat/stream", json={"session_id": "st0", "message": "hi"})
+    assert r.status_code == 503
+
+
+def test_chat_stream_emits_tool_tokens_and_done(client, app):
+    _install_fake_graph(app, [TOOL_CALL, AIMessage(content="A fine day awaits.")])
+    with client.stream(
+        "POST", "/chat/stream", json={"session_id": "st1", "message": "born 1990-08-15"}
+    ) as r:
+        assert r.status_code == 200
+        assert r.headers["content-type"].startswith("text/event-stream")
+        events = _read_events(r)
+
+    names = [e for e, _ in events]
+    assert names[0] == "tool" and events[0][1] == {"name": "get_horoscope"}
+    assert "token" in names
+    assert "".join(d["text"] for e, d in events if e == "token") == "A fine day awaits."
+    assert events[-1] == ("done", {"tools_used": ["get_horoscope"]})
+    assert client.get("/stats").json()["fortunes_told"] == 1
+
+
+def test_chat_stream_reports_provider_error_as_event(client, app):
+    class ExplodingModel(ScriptedChatModel):
+        def _generate(self, messages, stop=None, run_manager=None, **kwargs):
+            raise RuntimeError("upstream overloaded")
+
+    app.state.graph = build_graph(
+        ExplodingModel(responses=[AIMessage(content="unused")]), [get_horoscope], InMemorySaver()
+    )
+    with client.stream("POST", "/chat/stream", json={"session_id": "st2", "message": "hi"}) as r:
+        events = _read_events(r)
+    assert events[-1][0] == "error"
+    assert "upstream overloaded" in events[-1][1]["detail"]

@@ -37,8 +37,11 @@ each part creates a problem you only meet once software leaves your laptop:
 3. Open http://localhost:8000/docs. This page is generated from the code.
 4. Open http://localhost:8000/health.
 
-Note: the free-tier model on OpenRouter sometimes answers "service temporarily overloaded".
-The app returns that as a 502 and the conversation continues on the next message. Resend.
+Note: free-tier models on OpenRouter are shared and sometimes answer "overloaded" or
+"rate-limited". The app retries each model call up to `LLM_MAX_ATTEMPTS` times, then reports
+the error in the chat. Resend if that happens. Reasoning models also spend seconds "thinking"
+before the first word; `LLM_REASONING=low` in `.env` keeps that short. The default model is
+`poolside/laguna-s-2.1:free`, which answers in a few seconds; change `LLM_MODEL` to try another.
 
 Try this too: reload the page mid-conversation. The chat log is empty, but the Oracle still
 remembers you. The session id lives in the browser's `sessionStorage` and the history lives in
@@ -65,6 +68,10 @@ the server process. Ask the room where each of those would have to live in the c
 - **Status codes we use:** 200 worked; 422 your input failed validation, and the body
   says which field; 502 the LLM provider failed; 503 the app is up but not configured
   (no API key).
+- **Streaming.** A normal response arrives all at once. A streamed response is one
+  connection that stays open while the server pushes pieces; `/chat/stream` does this with
+  Server-Sent Events, a plain-text format of `event:` and `data:` lines. Users see the first
+  word in a second instead of staring at a spinner for ten.
 - **Environment variables** are configuration that lives outside the code. Locally they
   come from `.env`; in the cloud they come from a secret manager. `.env` is never committed.
 - **Dependency locking.** `pyproject.toml` says what you want. `uv.lock` records exactly
@@ -107,7 +114,10 @@ Read the files in this order. One or two points each.
    `MODEL_API_URL`, which today is this same process. On Day 5 that becomes another
    container, and only the env var changes.
 8. `app/routers/chat.py`. The browser's session id is the memory key. We count which tools
-   ran in this turn by comparing message counts before and after.
+   ran in this turn by comparing message counts before and after. There are two endpoints:
+   `/chat` returns one JSON reply (easy to curl and test), and `/chat/stream` pushes tokens as
+   Server-Sent Events so the page can show words as they arrive. Same graph, same memory;
+   only the delivery differs. Watch the network tab while chatting to see the stream.
 9. `app/main.py`. The lifespan function wires everything once at startup: settings,
    models, store, agent graph.
 10. `static/index.html`. Plain fetch calls. The page knows nothing the API does not
