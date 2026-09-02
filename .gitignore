@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+
+# Secrets and local config
+.env
+.env.*
+!.env.example
+
+# Raw data (large, downloaded by training/prepare_data.py)
+day*/oracle/data/raw/
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
