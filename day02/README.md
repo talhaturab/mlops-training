@@ -15,6 +15,9 @@ Files for today:
 
 - The course repo is on GitHub and public. Students fork it.
 - Your EC2 instance from Day 1 is running, with `~/.env` on it.
+- Its security group allows SSH (port 22) from **anywhere**, not only "My IP". GitHub's
+  runners connect from their own addresses. The key is still required, so this is the
+  usual trade-off for a classroom box; Day 4 discusses the better options.
 - In the repo settings you have set: variable `EC2_HOST` (the instance IP), variable
   `EC2_USER` (`ec2-user`), and secret `EC2_SSH_KEY` (the contents of the `.pem` file).
 - After the first run, flip the package `ghcr.io/<owner>/oracle` to **public** in the

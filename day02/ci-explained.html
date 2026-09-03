@@ -316,6 +316,7 @@ jobs:
     <li>Pulling a private package without logging in. The server's <code>docker pull</code> is refused; our deploy job logs in with the run's token first.</li>
     <li>Letting deploy run on pull requests. Every stranger's branch would replace production.</li>
     <li>Green pipeline, broken app: no health check after deploy. Ours curls <code>/health</code> from outside.</li>
+    <li>SSH allowed only from "My IP". The deploy job times out on the first line; GitHub's runners are not your laptop.</li>
   </ul>
 
   <p class="remember"><b>The one sentence to remember:</b> a pipeline is yesterday's commands written down once, run by a machine that is new every time, and stopped by the first thing that fails.</p>
