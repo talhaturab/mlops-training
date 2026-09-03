@@ -13,6 +13,7 @@ on:
     paths: ["day01/oracle/**", ".github/workflows/oracle.yml"]
   pull_request:
     paths: ["day01/oracle/**", ".github/workflows/oracle.yml"]
+  workflow_dispatch:        # the "Run workflow" button, for demos and re-runs
 
 # Two people pushing at once: runs queue up in order instead of racing each other.
 concurrency:
