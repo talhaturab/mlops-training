@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>CI/CD, in plain English</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400;1,8..60,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    color-scheme: light;
+    --paper: #fbf8f1; --panel: #f3eee2; --card: #ffffff; --ink: #1d1a17; --muted: #6b645a; --rule: #ddd6c8;
+    --accent: #1f4e79; --accent-soft: #e4edf6; --warm: #b8562a; --warm-soft: #f6e6dc;
+    --code-bg: #1d1a17; --code-ink: #f1ebe0; --code-muted: #a39a88; --code-num: #6f675b;
+    --remember-bg: #1d1a17; --remember-ink: #fbf8f1; --remember-accent: #f3c988; --ghost: #c9c1b1;
+    --serif: "Source Serif 4", "Iowan Old Style", Charter, Georgia, serif;
+    --mono: "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
+  }
+  /* dark palette: follows the system unless the toggle has set data-theme */
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --paper: #15131a; --panel: #1f1c25; --card: #1a1820; --ink: #ebe6dc; --muted: #a59d92; --rule: #383341;
+      --accent: #8fb6de; --accent-soft: #1e2a3a; --warm: #e5906a; --warm-soft: #3a2a23;
+      --code-bg: #0e0d12; --code-ink: #e9e3d8; --code-muted: #8f877c; --code-num: #5c5666;
+      --remember-bg: #ebe6dc; --remember-ink: #15131a; --remember-accent: #8a4d24; --ghost: #4a4552;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --paper: #15131a; --panel: #1f1c25; --card: #1a1820; --ink: #ebe6dc; --muted: #a59d92; --rule: #383341;
+    --accent: #8fb6de; --accent-soft: #1e2a3a; --warm: #e5906a; --warm-soft: #3a2a23;
+    --code-bg: #0e0d12; --code-ink: #e9e3d8; --code-muted: #8f877c; --code-num: #5c5666;
+    --remember-bg: #ebe6dc; --remember-ink: #15131a; --remember-accent: #8a4d24; --ghost: #4a4552;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--serif); font-size: 18px; line-height: 1.6; }
+  a { color: var(--accent); }
+
+  /* ---------- masthead ---------- */
+  .mast { max-width: 880px; margin: 0 auto; padding: 56px 24px 20px; border-bottom: 2px solid var(--ink); }
+  .eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin: 0 0 14px; }
+  h1 { margin: 0 0 12px; font-size: clamp(38px, 6vw, 56px); line-height: 1.02; font-weight: 600; letter-spacing: -.015em; }
+  .sub { margin: 0; font-size: 21px; font-style: italic; color: var(--muted); max-width: 34ch; line-height: 1.4; }
+  .toc { max-width: 880px; margin: 0 auto; padding: 18px 24px 0; display: flex; flex-wrap: wrap; gap: 8px 22px; font-family: var(--mono); font-size: 12.5px; }
+  .toc a { color: var(--muted); text-decoration: none; border-bottom: 1px solid var(--rule); padding-bottom: 1px; }
+  .toc a:hover { color: var(--accent); border-color: var(--accent); }
+  .toc .theme { margin-left: auto; font: inherit; color: var(--muted); background: var(--card); border: 1px solid var(--rule); border-radius: 999px; padding: 4px 12px; cursor: pointer; }
+  .toc .theme:hover { color: var(--accent); border-color: var(--accent); }
+
+  /* ---------- body ---------- */
+  main { max-width: 880px; margin: 0 auto; padding: 24px 24px 96px; }
+  section { padding: 44px 0 8px; border-top: 1px solid var(--rule); margin-top: 40px; }
+  section:first-of-type { border-top: 0; margin-top: 0; }
+  h2 { font-size: 30px; line-height: 1.15; font-weight: 600; margin: 0 0 18px; letter-spacing: -.01em; }
+  h2 small { display: block; font-family: var(--mono); font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); margin-bottom: 8px; font-weight: 500; }
+  p { margin: 0 0 18px; max-width: 68ch; }
+  ul { margin: 0 0 18px; padding-left: 22px; max-width: 68ch; } li { margin-bottom: 10px; }
+  li::marker { color: var(--accent); }
+  code { font-family: var(--mono); font-size: .86em; background: var(--panel); padding: 1px 6px; border-radius: 4px; }
+  .callout { background: var(--accent-soft); border-left: 4px solid var(--accent); color: var(--ink); padding: 16px 20px; margin: 24px 0; max-width: 72ch; border-radius: 0 8px 8px 0; }
+  .callout b { color: var(--accent); }
+  .callout p:last-child { margin: 0; }
+  .remember { background: var(--remember-bg); color: var(--remember-ink); padding: 28px 30px; border-radius: 12px; font-size: 24px; line-height: 1.35; font-style: italic; margin: 32px 0 0; }
+  .remember code { background: rgba(255,255,255,.14); color: inherit; }
+  .remember b { color: var(--remember-accent); font-style: normal; }
+
+  /* ---------- figures ---------- */
+  figure { margin: 26px 0 30px; }
+  figure svg { display: block; width: 100%; height: auto; max-width: 880px; }
+  figcaption { font-family: var(--mono); font-size: 12.5px; color: var(--muted); margin-top: 10px; line-height: 1.5; }
+  figcaption b { color: var(--ink); font-weight: 500; }
+  svg text { font-family: var(--serif); font-size: 15px; fill: var(--ink); }
+  svg .m { font-family: var(--mono); font-size: 12.5px; }
+  svg .s { font-size: 12.5px; fill: var(--muted); }
+  svg .box { fill: var(--card); stroke: var(--ink); stroke-width: 1.5; }
+  svg .soft { fill: var(--panel); stroke: var(--rule); stroke-width: 1.5; }
+  svg .hi { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.8; }
+  svg .warm { fill: var(--warm-soft); stroke: var(--warm); stroke-width: 1.8; }
+  svg .ln { stroke: var(--ink); stroke-width: 1.5; fill: none; }
+  svg .ln.a { stroke: var(--accent); stroke-width: 2; }
+  svg .ln.w { stroke: var(--warm); stroke-width: 2; }
+  svg .dash { stroke-dasharray: 5 5; }
+  svg .lab { font-family: var(--mono); font-size: 12px; fill: var(--accent); }
+  svg .lab.w { fill: var(--warm); }
+
+  /* ---------- glossary ---------- */
+  .words { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 8px 0 18px; }
+  @media (max-width: 720px) { .words { grid-template-columns: 1fr; } }
+  .word { background: var(--card); border: 1px solid var(--rule); border-radius: 10px; padding: 16px 18px; }
+  .word dt { font-family: var(--mono); font-size: 15px; color: var(--accent); font-weight: 500; margin-bottom: 6px; }
+  .word dd { margin: 0; font-size: 16.5px; line-height: 1.5; }
+
+  /* ---------- dockerfile ---------- */
+  pre, code, svg .m, svg .lab { font-variant-ligatures: none; }
+  pre { margin: 0; background: var(--code-bg); color: var(--code-ink); border: 1px solid var(--rule); font-family: var(--mono); font-size: 14px; line-height: 1.6; padding: 18px 20px; border-radius: 10px; white-space: pre; overflow-x: auto; }
+  pre .c { color: var(--code-muted); }
+  pre .n { display: inline-block; width: 26px; color: var(--code-num); user-select: none; }
+  pre .hl { background: rgba(31,78,121,.45); display: inline-block; width: 100%; }
+  .steps { list-style: none; padding: 0; margin: 22px 0 0; max-width: none; }
+  .steps li { display: grid; grid-template-columns: 54px 1fr; gap: 14px; padding: 14px 0; border-top: 1px solid var(--rule); margin: 0; align-items: start; }
+  .steps .ln-no { font-family: var(--mono); font-size: 13px; color: var(--accent); background: var(--accent-soft); border-radius: 6px; padding: 5px 0; text-align: center; margin-top: 2px; }
+  .steps p { margin: 0; max-width: none; }
+  .cmds { display: grid; grid-template-columns: 1fr; gap: 12px; margin: 8px 0 20px; }
+  .cmd { display: grid; grid-template-columns: 1fr 240px; gap: 18px; align-items: center; background: var(--card); border: 1px solid var(--rule); border-radius: 10px; padding: 12px 16px; }
+  .cmd pre { padding: 10px 14px; font-size: 13.5px; }
+  .cmd .why { font-size: 16px; line-height: 1.45; }
+  .cmd .why b { font-family: var(--mono); font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--accent); display: block; margin-bottom: 2px; }
+  @media (max-width: 720px) { .cmd { grid-template-columns: 1fr; } }
+  .mistakes { list-style: none; padding: 0; max-width: none; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 720px) { .mistakes { grid-template-columns: 1fr; } }
+  .mistakes li { background: var(--warm-soft); border-left: 4px solid var(--warm); border-radius: 0 8px 8px 0; padding: 12px 16px; margin: 0; font-size: 16.5px; line-height: 1.5; }
+  @media print { .toc { display: none; } section { break-inside: avoid; } }
+</style>
+<script>
+  // Apply a saved theme before first paint so the page never flashes the wrong colours.
+  try {
+    const saved = localStorage.getItem("course-doc-theme");
+    if (saved === "dark" || saved === "light") document.documentElement.dataset.theme = saved;
+  } catch (e) {}
+</script>
+</head>
+<body>
+
+<header class="mast">
+  <p class="eyebrow">Day 2 · DevOps &amp; MLOps for ML engineers · handout</p>
+  <h1>CI/CD, in plain English</h1>
+  <p class="sub">How one <code>git push</code> replaces the six commands you typed yesterday.</p>
+</header>
+<nav class="toc" aria-label="Sections">
+  <a href="#four">Four words</a><a href="#pipeline">The pipeline</a><a href="#runner">What a runner is</a>
+  <a href="#registry">The registry</a><a href="#secrets">Where things live</a><a href="#workflow">The workflow file</a>
+  <a href="#mistakes">Mistakes</a>
+  <button class="theme" id="theme" type="button" aria-label="Switch colour theme">theme</button>
+</nav>
+
+<main>
+
+<section id="four">
+  <h2><small>01</small>Every pipeline is four words</h2>
+  <p>Yesterday you changed one line and then typed six commands: build the image, save it, upload it, load it, remove the old container, start the new one. Strip away the tools and you did four things: you <b>tested</b> (if you remembered), you <b>built</b>, you <b>published</b>, and you <b>deployed</b>. Every CI/CD system on earth is those four words with a machine doing the typing.</p>
+  <p><b>CI</b>, continuous integration, is the first two: every change is tested and built the moment it lands, so problems surface in minutes, not on release day. <b>CD</b>, continuous delivery, is the last two: what passed is published and put where users can reach it, the same way every time.</p>
+
+  <figure>
+    <svg viewBox="0 0 880 250" role="img" aria-label="Day 1: a person runs six commands by hand between the laptop and the server. Day 2: a push to GitHub triggers test, build, publish, deploy automatically and the person only refreshes the page.">
+      <defs><marker id="a1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
+      <text x="20" y="28" font-weight="600">Yesterday</text>
+      <rect x="20" y="44" width="110" height="52" rx="8" class="box"/><text x="75" y="75" text-anchor="middle" class="m">laptop</text>
+      <rect x="750" y="44" width="110" height="52" rx="8" class="box"/><text x="805" y="75" text-anchor="middle" class="m">EC2</text>
+      <path d="M130 70 L748 70" class="ln w" marker-end="url(#a1)" style="color:var(--warm)"/>
+      <g class="m" style="fill:var(--warm)">
+        <text x="200" y="60" text-anchor="middle">build</text><text x="300" y="60" text-anchor="middle">save</text><text x="400" y="60" text-anchor="middle">scp</text>
+        <text x="500" y="60" text-anchor="middle">load</text><text x="600" y="60" text-anchor="middle">rm -f</text><text x="700" y="60" text-anchor="middle">run</text>
+      </g>
+      <text x="440" y="92" text-anchor="middle" class="s">six commands, typed by you, every time, in the right order</text>
+      <line x1="20" y1="120" x2="860" y2="120" class="ln dash" style="stroke:var(--rule)"/>
+      <text x="20" y="150" font-weight="600">Today</text>
+      <rect x="20" y="166" width="110" height="52" rx="8" class="box"/><text x="75" y="197" text-anchor="middle" class="m">laptop</text>
+      <path d="M130 192 L198 192" class="ln a" marker-end="url(#a1)" style="color:var(--accent)"/>
+      <text x="164" y="180" text-anchor="middle" class="lab">git push</text>
+      <rect x="200" y="150" width="470" height="84" rx="10" class="hi"/>
+      <text x="215" y="170" class="m" style="fill:var(--muted)">GITHUB ACTIONS</text>
+      <g>
+        <rect x="220" y="182" width="90" height="36" rx="6" class="box"/><text x="265" y="205" text-anchor="middle" class="m">test</text>
+        <rect x="330" y="182" width="90" height="36" rx="6" class="box"/><text x="375" y="205" text-anchor="middle" class="m">build</text>
+        <rect x="440" y="182" width="90" height="36" rx="6" class="box"/><text x="485" y="205" text-anchor="middle" class="m">publish</text>
+        <rect x="550" y="182" width="100" height="36" rx="6" class="box"/><text x="600" y="205" text-anchor="middle" class="m">deploy</text>
+      </g>
+      <path d="M310 200 L328 200" class="ln" marker-end="url(#a1)"/><path d="M420 200 L438 200" class="ln" marker-end="url(#a1)"/><path d="M530 200 L548 200" class="ln" marker-end="url(#a1)"/>
+      <path d="M670 192 L748 192" class="ln a" marker-end="url(#a1)" style="color:var(--accent)"/>
+      <text x="709" y="180" text-anchor="middle" class="lab">ssh</text>
+      <rect x="750" y="166" width="110" height="52" rx="8" class="box"/><text x="805" y="197" text-anchor="middle" class="m">EC2</text>
+      <text x="440" y="244" text-anchor="middle" class="s">one command, typed by you; the rest runs the same way every time</text>
+    </svg>
+    <figcaption><b>Figure 1.</b> Nothing new happens on the right. The same four things happen in the same order; the difference is who does them and how reliably.</figcaption>
+  </figure>
+</section>
+
+<section id="pipeline">
+  <h2><small>02</small>The pipeline, and where it stops</h2>
+  <p>A pipeline is a list of <b>jobs</b>. Each job is a list of <b>steps</b>, each step a command. Jobs can depend on each other, so a failed job stops everything behind it. That dependency is the whole safety story: a red test means no image gets built and nothing reaches the server, and nobody had to remember to check.</p>
+  <p>Ours has three jobs. <b>test</b> runs on every push and every pull request. <b>build-and-push</b> waits for test and runs only on <code>main</code>. <b>deploy</b> waits for the build and runs only when the repository knows where the server is.</p>
+
+  <figure>
+    <svg viewBox="0 0 880 262" role="img" aria-label="A pull request runs only the test job. A push to main runs test, then build-and-push, then deploy. A failed test stops the chain; a fork without an EC2_HOST variable stops before deploy.">
+      <defs><marker id="a2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
+      <rect x="20" y="30" width="140" height="50" rx="8" class="soft"/><text x="90" y="60" text-anchor="middle" class="m">pull request</text>
+      <rect x="20" y="150" width="140" height="50" rx="8" class="soft"/><text x="90" y="180" text-anchor="middle" class="m">push to main</text>
+      <text x="90" y="108" text-anchor="middle" class="s">tests only,</text><text x="90" y="124" text-anchor="middle" class="s">nothing published</text>
+      <rect x="230" y="90" width="140" height="70" rx="10" class="hi"/><text x="300" y="120" text-anchor="middle" font-weight="600">test</text><text x="300" y="142" text-anchor="middle" class="s">ruff + pytest</text>
+      <path d="M160 55 C 200 55, 200 125, 228 125" class="ln" marker-end="url(#a2)"/>
+      <path d="M160 175 C 200 175, 200 125, 228 125" class="ln" marker-end="url(#a2)"/>
+      <rect x="460" y="90" width="160" height="70" rx="10" class="hi"/><text x="540" y="120" text-anchor="middle" font-weight="600">build-and-push</text><text x="540" y="142" text-anchor="middle" class="s">image → ghcr.io</text>
+      <path d="M370 125 L458 125" class="ln a" marker-end="url(#a2)" style="color:var(--accent)"/>
+      <text x="414" y="110" text-anchor="middle" class="lab">needs test</text>
+      <text x="414" y="148" text-anchor="middle" class="lab">main only</text>
+      <rect x="710" y="90" width="150" height="70" rx="10" class="hi"/><text x="785" y="120" text-anchor="middle" font-weight="600">deploy</text><text x="785" y="142" text-anchor="middle" class="s">ssh, pull, run</text>
+      <path d="M620 125 L708 125" class="ln a" marker-end="url(#a2)" style="color:var(--accent)"/>
+      <text x="664" y="110" text-anchor="middle" class="lab">needs build</text>
+      <text x="664" y="148" text-anchor="middle" class="lab">if EC2_HOST</text>
+      <path d="M300 160 L300 205" class="ln w dash" style="color:var(--warm)"/>
+      <text x="300" y="228" text-anchor="middle" class="lab w">red test: nothing after this runs</text>
+      <path d="M785 160 L785 205" class="ln w dash" style="color:var(--warm)"/>
+      <text x="860" y="228" text-anchor="end" class="lab w">no server set: stops here</text>
+    </svg>
+    <figcaption><b>Figure 2.</b> The arrows are the rules. A pull request never reaches the registry; a push to <code>main</code> reaches the server only if every job before it went green.</figcaption>
+  </figure>
+</section>
+
+<section id="runner">
+  <h2><small>03</small>What a runner actually is</h2>
+  <p>Every job runs on a <b>runner</b>: a fresh virtual machine that GitHub starts for you, uses for a few minutes, and throws away. It has nothing on it that you did not put there in the steps. That is why the workflow installs uv and runs <code>uv sync --frozen</code> before testing: the lockfile from Day 1 is what makes the runner's environment match yours.</p>
+  <p>This is the strongest argument for the pipeline. "Works on my machine" cannot happen, because the machine is new every time and anyone can read the script that set it up.</p>
+  <div class="callout"><p><b>For ML engineers:</b> a runner is a clean training job. Same data (the repo), same recipe (the lockfile), same code; a different result would mean a real bug, not a stale environment.</p></div>
+</section>
+
+<section id="registry">
+  <h2><small>04</small>A registry instead of a file on a laptop</h2>
+  <p>Yesterday the image lived in a <code>.tar.gz</code> on your disk and reached the server only because you carried it there. Today the build job pushes it to <b>GitHub Container Registry</b>, <code>ghcr.io</code>, and the server pulls it from there. Two things improve at once: the upload leaves your laptop, and pushes only send the layers the registry has not seen, so a code-only change moves a few megabytes, not 300.</p>
+  <p>The image gets two <b>tags</b>. <code>oracle:&lt;sha&gt;</code>, the first seven characters of the commit, is exact and never changes; the deploy job pulls that one. <code>oracle:latest</code> moves with every build and exists for humans. Deploying <code>latest</code> is one of yesterday's mistakes; the pipeline avoids it for you.</p>
+  <p>Logging in to the registry needs no password of yours. Every workflow run is issued a short-lived token, <code>GITHUB_TOKEN</code>, with exactly the permissions the job declares. Ours declares <code>packages: write</code>, nothing more.</p>
+</section>
+
+<section id="secrets">
+  <h2><small>05</small>Where things live now</h2>
+  <p>The pipeline needs three things to reach your server: the address, the user name, and the SSH key. The first two are <b>variables</b>, visible to anyone who can read the repo settings. The key is a <b>secret</b>: write-only, masked in logs, never readable again through the interface. Your laptop no longer needs to keep any of them.</p>
+
+  <figure>
+    <svg viewBox="0 0 880 300" role="img" aria-label="Three places: the laptop holds only code and the OpenRouter key locally; GitHub holds the repo, the runner, the registry, and the deploy secrets; EC2 holds the container and the env file. Arrows show push, pull, and ssh.">
+      <defs><marker id="a3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
+      <rect x="20" y="20" width="200" height="262" rx="12" class="soft"/><text x="120" y="46" text-anchor="middle" font-weight="600">Your laptop</text>
+      <g class="m">
+        <rect x="40" y="64" width="160" height="28" rx="5" class="box"/><text x="52" y="83">code</text>
+        <rect x="40" y="100" width="160" height="28" rx="5" class="warm"/><text x="52" y="119">.env (for local runs)</text>
+      </g>
+      <text x="120" y="262" text-anchor="middle" class="s">no image, no server key</text>
+      <rect x="290" y="20" width="300" height="262" rx="12" class="hi"/><text x="440" y="46" text-anchor="middle" font-weight="600">GitHub</text>
+      <g class="m">
+        <rect x="310" y="64" width="260" height="28" rx="5" class="box"/><text x="322" y="83">repo: code + workflow file</text>
+        <rect x="310" y="100" width="260" height="28" rx="5" class="box"/><text x="322" y="119">runner: fresh VM per job</text>
+        <rect x="310" y="136" width="260" height="28" rx="5" class="box"/><text x="322" y="155">ghcr.io/owner/oracle:sha</text>
+        <rect x="310" y="172" width="260" height="28" rx="5" class="box"/><text x="322" y="191">variables: EC2_HOST, EC2_USER</text>
+        <rect x="310" y="208" width="260" height="28" rx="5" class="warm"/><text x="322" y="227">secret: EC2_SSH_KEY</text>
+      </g>
+      <text x="440" y="262" text-anchor="middle" class="s">secrets are write-only and masked in logs</text>
+      <rect x="660" y="20" width="200" height="262" rx="12" class="soft"/><text x="760" y="46" text-anchor="middle" font-weight="600">EC2</text>
+      <g class="m">
+        <rect x="680" y="64" width="160" height="28" rx="5" class="box"/><text x="692" y="83">container: oracle</text>
+        <rect x="680" y="100" width="160" height="28" rx="5" class="warm"/><text x="692" y="119">~/.env (Day 4)</text>
+      </g>
+      <text x="760" y="262" text-anchor="middle" class="s">pulls the image, keeps the key</text>
+      <path d="M220 78 L288 78" class="ln a" marker-end="url(#a3)" style="color:var(--accent)"/><text x="254" y="66" text-anchor="middle" class="lab">push</text>
+      <path d="M590 150 L658 150" class="ln a" marker-end="url(#a3)" style="color:var(--accent)"/><text x="624" y="138" text-anchor="middle" class="lab">pull</text>
+      <path d="M590 222 L658 222" class="ln w" marker-end="url(#a3)" style="color:var(--warm)"/><text x="624" y="242" text-anchor="middle" class="lab w">ssh</text>
+    </svg>
+    <figcaption><b>Figure 3.</b> The laptop is out of the loop. The one thing still handled by hand is the OpenRouter key sitting in a file on the server; Day 4 moves it into a secret manager.</figcaption>
+  </figure>
+</section>
+
+<section id="workflow">
+  <h2><small>06</small>The workflow file, the parts that matter</h2>
+  <p>The full file is <code>.github/workflows/oracle.yml</code>. Read it top to bottom like the Dockerfile. These are the lines to understand; the rest is plumbing.</p>
+<pre><span class="c"># what starts it</span>
+on:
+  push:         { branches: [main], paths: ["day01/oracle/**"] }
+  pull_request: { paths: ["day01/oracle/**"] }
+
+<span class="c"># two pushes at once queue up instead of racing</span>
+concurrency: { group: oracle-pipeline, cancel-in-progress: false }
+
+jobs:
+  test:
+    runs-on: ubuntu-latest              <span class="c"># a fresh VM</span>
+    steps:
+      - uses: actions/checkout@v4       <span class="c"># get the code</span>
+      - uses: astral-sh/setup-uv@v6     <span class="c"># get uv</span>
+      - run: uv sync --frozen           <span class="c"># the lockfile, again</span>
+      - run: uv run ruff check . &amp;&amp; uv run pytest -q
+
+  build-and-push:
+    needs: test                         <span class="c"># red test = no image</span>
+    if: github.ref == 'refs/heads/main'
+    permissions: { packages: write }    <span class="c"># the built-in token may push</span>
+    steps:
+      - uses: docker/build-push-action@v6
+        with: { platforms: linux/amd64, push: true,
+                tags: ghcr.io/OWNER/oracle:SHA, ghcr.io/OWNER/oracle:latest }
+
+  deploy:
+    needs: build-and-push
+    if: vars.EC2_HOST != ''             <span class="c"># forks without a server stop here</span>
+    steps:
+      - run: |                          <span class="c"># yesterday's commands, verbatim</span>
+          ssh -i key ec2-user@$EC2_HOST '
+            docker pull ghcr.io/OWNER/oracle:SHA
+            docker rm -f oracle
+            docker run -d --restart unless-stopped -p 8000:8000 --env-file ~/.env \
+                       --name oracle ghcr.io/OWNER/oracle:SHA'</pre>
+  <ol class="steps">
+    <li><span class="ln-no">on</span><p><b>Triggers.</b> The <code>paths</code> filter means editing a README does not rebuild the image. Pull requests run tests only, so nothing is published from an unreviewed branch.</p></li>
+    <li><span class="ln-no">needs</span><p><b>Ordering.</b> Jobs run in parallel unless told otherwise. <code>needs</code> draws the arrows from Figure 2.</p></li>
+    <li><span class="ln-no">frozen</span><p><b>Reproducibility.</b> The runner installs exactly what your lockfile says, the same way the Dockerfile does. Three environments, one source of truth.</p></li>
+    <li><span class="ln-no">SHA</span><p><b>Exact deploys.</b> The commit hash is the image tag. What is running on the server can always be traced to a line in git history.</p></li>
+    <li><span class="ln-no">secrets</span><p><b>Nothing typed.</b> The registry login uses the run's own token; the SSH key comes from a secret. No credential ever appears in the file or the logs.</p></li>
+  </ol>
+</section>
+
+<section id="mistakes">
+  <h2><small>07</small>Mistakes to make on purpose, once</h2>
+  <ul class="mistakes">
+    <li>Pushing without the <code>paths</code> filter and rebuilding a 300 MB image because a README changed.</li>
+    <li>Deploying <code>:latest</code>. Two runs finish out of order and the older image wins.</li>
+    <li>Pasting the SSH key into the YAML "just to test". It is now in git history forever.</li>
+    <li>Pulling a private package without logging in. The server's <code>docker pull</code> is refused; our deploy job logs in with the run's token first.</li>
+    <li>Letting deploy run on pull requests. Every stranger's branch would replace production.</li>
+    <li>Green pipeline, broken app: no health check after deploy. Ours curls <code>/health</code> from outside.</li>
+  </ul>
+
+  <p class="remember"><b>The one sentence to remember:</b> a pipeline is yesterday's commands written down once, run by a machine that is new every time, and stopped by the first thing that fails.</p>
+</section>
+
+</main>
+<script>
+  const root = document.documentElement;
+  const button = document.getElementById("theme");
+  const systemDark = window.matchMedia("(prefers-color-scheme: dark)");
+  function current() { return root.dataset.theme || (systemDark.matches ? "dark" : "light"); }
+  function label() { button.textContent = current() === "dark" ? "☀ light" : "☾ dark"; }
+  button.addEventListener("click", () => {
+    const next = current() === "dark" ? "light" : "dark";
+    root.dataset.theme = next;
+    try { localStorage.setItem("course-doc-theme", next); } catch (e) {}
+    label();
+  });
+  systemDark.addEventListener("change", label);
+  label();
+</script>
+</body>
+</html>

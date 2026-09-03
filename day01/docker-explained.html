@@ -64,6 +64,7 @@
   .callout b { color: var(--accent); }
   .callout p:last-child { margin: 0; }
   .remember { background: var(--remember-bg); color: var(--remember-ink); padding: 28px 30px; border-radius: 12px; font-size: 24px; line-height: 1.35; font-style: italic; margin: 32px 0 0; }
+  .remember code { background: rgba(255,255,255,.14); color: inherit; }
   .remember b { color: var(--remember-accent); font-style: normal; }
 
   /* ---------- figures ---------- */
@@ -93,6 +94,7 @@
   .word dd { margin: 0; font-size: 16.5px; line-height: 1.5; }
 
   /* ---------- dockerfile ---------- */
+  pre, code, svg .m, svg .lab { font-variant-ligatures: none; }
   pre { margin: 0; background: var(--code-bg); color: var(--code-ink); border: 1px solid var(--rule); font-family: var(--mono); font-size: 14px; line-height: 1.6; padding: 18px 20px; border-radius: 10px; white-space: pre; overflow-x: auto; }
   pre .c { color: var(--code-muted); }
   pre .n { display: inline-block; width: 26px; color: var(--code-num); user-select: none; }

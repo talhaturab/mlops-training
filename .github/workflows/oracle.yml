@@ -1,0 +1,140 @@
+# The Oracle's pipeline. Read it top to bottom, like the Dockerfile.
+#
+#   push to main ──▶ test ──▶ build-and-push (image to GHCR) ──▶ deploy (SSH to EC2)
+#   pull request ──▶ test
+#
+# Every step here is one of the six commands from Day 1, done by a machine instead of you.
+
+name: oracle
+
+on:
+  push:
+    branches: [main]
+    paths: ["day01/oracle/**", ".github/workflows/oracle.yml"]
+  pull_request:
+    paths: ["day01/oracle/**", ".github/workflows/oracle.yml"]
+
+# Two people pushing at once: runs queue up in order instead of racing each other.
+concurrency:
+  group: oracle-pipeline
+  cancel-in-progress: false
+
+env:
+  APP_DIR: day01/oracle
+  IMAGE_NAME: oracle
+
+jobs:
+  # ---------------------------------------------------------------- 1. test
+  test:
+    name: Lint and test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ env.APP_DIR }}
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: "day01/oracle/uv.lock"
+
+      - name: Install locked dependencies
+        run: uv sync --frozen
+
+      - name: Lint
+        run: uv run ruff check . && uv run ruff format --check .
+
+      - name: Test
+        run: uv run pytest -q
+
+  # ------------------------------------------------------ 2. build and push
+  build-and-push:
+    name: Build image and push to GHCR
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write          # lets the built-in token push to ghcr.io
+    outputs:
+      image: ${{ steps.meta.outputs.image }}
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v4
+
+      - name: Work out the image name
+        id: meta
+        # ghcr.io requires a lowercase owner; GitHub usernames may not be.
+        run: |
+          owner=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          echo "image=ghcr.io/${owner}/${IMAGE_NAME}" >> "$GITHUB_OUTPUT"
+          echo "sha=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build for x86 and push
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ env.APP_DIR }}
+          platforms: linux/amd64
+          push: true
+          # Two tags: an exact one for machines, a moving one for humans.
+          tags: |
+            ${{ steps.meta.outputs.image }}:${{ steps.meta.outputs.sha }}
+            ${{ steps.meta.outputs.image }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # --------------------------------------------------------------- 3. deploy
+  deploy:
+    name: Deploy to EC2
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    # Only runs when the repo has the EC2_HOST variable set. Forks without it stop here.
+    if: ${{ vars.EC2_HOST != '' }}
+    permissions:
+      contents: read
+      packages: read           # the server logs in with this run's token to pull the image
+    environment:
+      name: ec2
+      url: http://${{ vars.EC2_HOST }}:8000
+    steps:
+      - name: Put the SSH key where ssh expects it
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H "${{ vars.EC2_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: Pull the exact image and swap the container
+        run: |
+          image="${{ needs.build-and-push.outputs.image }}:${GITHUB_SHA::7}"
+          # The token travels inside the script over ssh, never on a command line.
+          printf 'export GHCR_USER=%q GHCR_TOKEN=%q\n' "${{ github.actor }}" "${{ secrets.GITHUB_TOKEN }}" > remote.sh
+          cat >> remote.sh <<'REMOTE'
+          set -euo pipefail
+          image="$1"
+          echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin >/dev/null
+          docker pull "$image"
+          docker logout ghcr.io >/dev/null
+          docker rm -f oracle 2>/dev/null || true
+          docker run -d --restart unless-stopped -p 8000:8000 --env-file ~/.env --name oracle "$image"
+          for i in $(seq 1 30); do curl -sf localhost:8000/health >/dev/null && break; sleep 1; done
+          curl -s localhost:8000/health; echo
+          docker image prune -f >/dev/null
+          REMOTE
+          ssh -i ~/.ssh/deploy_key "${{ vars.EC2_USER || 'ec2-user' }}@${{ vars.EC2_HOST }}" bash -s "$image" < remote.sh
+
+      - name: Smoke test from the outside
+        run: curl -sf "http://${{ vars.EC2_HOST }}:8000/health"

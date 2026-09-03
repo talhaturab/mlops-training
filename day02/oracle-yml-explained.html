@@ -1,0 +1,389 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>oracle.yml, line by line</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400;1,8..60,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    color-scheme: light;
+    --paper: #fbf8f1; --panel: #f3eee2; --card: #ffffff; --ink: #1d1a17; --muted: #6b645a; --rule: #ddd6c8;
+    --accent: #1f4e79; --accent-soft: #e4edf6; --warm: #b8562a; --warm-soft: #f6e6dc;
+    --code-bg: #1d1a17; --code-ink: #f1ebe0; --code-muted: #a39a88; --code-num: #6f675b;
+    --remember-bg: #1d1a17; --remember-ink: #fbf8f1; --remember-accent: #f3c988; --ghost: #c9c1b1;
+    --serif: "Source Serif 4", "Iowan Old Style", Charter, Georgia, serif;
+    --mono: "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
+  }
+  /* dark palette: follows the system unless the toggle has set data-theme */
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --paper: #15131a; --panel: #1f1c25; --card: #1a1820; --ink: #ebe6dc; --muted: #a59d92; --rule: #383341;
+      --accent: #8fb6de; --accent-soft: #1e2a3a; --warm: #e5906a; --warm-soft: #3a2a23;
+      --code-bg: #0e0d12; --code-ink: #e9e3d8; --code-muted: #8f877c; --code-num: #5c5666;
+      --remember-bg: #ebe6dc; --remember-ink: #15131a; --remember-accent: #8a4d24; --ghost: #4a4552;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --paper: #15131a; --panel: #1f1c25; --card: #1a1820; --ink: #ebe6dc; --muted: #a59d92; --rule: #383341;
+    --accent: #8fb6de; --accent-soft: #1e2a3a; --warm: #e5906a; --warm-soft: #3a2a23;
+    --code-bg: #0e0d12; --code-ink: #e9e3d8; --code-muted: #8f877c; --code-num: #5c5666;
+    --remember-bg: #ebe6dc; --remember-ink: #15131a; --remember-accent: #8a4d24; --ghost: #4a4552;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--serif); font-size: 18px; line-height: 1.6; }
+  a { color: var(--accent); }
+
+  /* ---------- masthead ---------- */
+  .mast { max-width: 880px; margin: 0 auto; padding: 56px 24px 20px; border-bottom: 2px solid var(--ink); }
+  .eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin: 0 0 14px; }
+  h1 { margin: 0 0 12px; font-size: clamp(38px, 6vw, 56px); line-height: 1.02; font-weight: 600; letter-spacing: -.015em; }
+  .sub { margin: 0; font-size: 21px; font-style: italic; color: var(--muted); max-width: 34ch; line-height: 1.4; }
+  .toc { max-width: 880px; margin: 0 auto; padding: 18px 24px 0; display: flex; flex-wrap: wrap; gap: 8px 22px; font-family: var(--mono); font-size: 12.5px; }
+  .toc a { color: var(--muted); text-decoration: none; border-bottom: 1px solid var(--rule); padding-bottom: 1px; }
+  .toc a:hover { color: var(--accent); border-color: var(--accent); }
+  .toc .theme { margin-left: auto; font: inherit; color: var(--muted); background: var(--card); border: 1px solid var(--rule); border-radius: 999px; padding: 4px 12px; cursor: pointer; }
+  .toc .theme:hover { color: var(--accent); border-color: var(--accent); }
+
+  /* ---------- body ---------- */
+  main { max-width: 880px; margin: 0 auto; padding: 24px 24px 96px; }
+  section { padding: 44px 0 8px; border-top: 1px solid var(--rule); margin-top: 40px; }
+  section:first-of-type { border-top: 0; margin-top: 0; }
+  h2 { font-size: 30px; line-height: 1.15; font-weight: 600; margin: 0 0 18px; letter-spacing: -.01em; }
+  h2 small { display: block; font-family: var(--mono); font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); margin-bottom: 8px; font-weight: 500; }
+  p { margin: 0 0 18px; max-width: 68ch; }
+  ul { margin: 0 0 18px; padding-left: 22px; max-width: 68ch; } li { margin-bottom: 10px; }
+  li::marker { color: var(--accent); }
+  code { font-family: var(--mono); font-size: .86em; background: var(--panel); padding: 1px 6px; border-radius: 4px; }
+  .callout { background: var(--accent-soft); border-left: 4px solid var(--accent); color: var(--ink); padding: 16px 20px; margin: 24px 0; max-width: 72ch; border-radius: 0 8px 8px 0; }
+  .callout b { color: var(--accent); }
+  .callout p:last-child { margin: 0; }
+  .remember { background: var(--remember-bg); color: var(--remember-ink); padding: 28px 30px; border-radius: 12px; font-size: 24px; line-height: 1.35; font-style: italic; margin: 32px 0 0; }
+  .remember b { color: var(--remember-accent); font-style: normal; }
+
+  /* ---------- figures ---------- */
+  figure { margin: 26px 0 30px; }
+  figure svg { display: block; width: 100%; height: auto; max-width: 880px; }
+  figcaption { font-family: var(--mono); font-size: 12.5px; color: var(--muted); margin-top: 10px; line-height: 1.5; }
+  figcaption b { color: var(--ink); font-weight: 500; }
+  svg text { font-family: var(--serif); font-size: 15px; fill: var(--ink); }
+  svg .m { font-family: var(--mono); font-size: 12.5px; }
+  svg .s { font-size: 12.5px; fill: var(--muted); }
+  svg .box { fill: var(--card); stroke: var(--ink); stroke-width: 1.5; }
+  svg .soft { fill: var(--panel); stroke: var(--rule); stroke-width: 1.5; }
+  svg .hi { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.8; }
+  svg .warm { fill: var(--warm-soft); stroke: var(--warm); stroke-width: 1.8; }
+  svg .ln { stroke: var(--ink); stroke-width: 1.5; fill: none; }
+  svg .ln.a { stroke: var(--accent); stroke-width: 2; }
+  svg .ln.w { stroke: var(--warm); stroke-width: 2; }
+  svg .dash { stroke-dasharray: 5 5; }
+  svg .lab { font-family: var(--mono); font-size: 12px; fill: var(--accent); }
+  svg .lab.w { fill: var(--warm); }
+
+  /* ---------- glossary ---------- */
+  .words { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 8px 0 18px; }
+  @media (max-width: 720px) { .words { grid-template-columns: 1fr; } }
+  .word { background: var(--card); border: 1px solid var(--rule); border-radius: 10px; padding: 16px 18px; }
+  .word dt { font-family: var(--mono); font-size: 15px; color: var(--accent); font-weight: 500; margin-bottom: 6px; }
+  .word dd { margin: 0; font-size: 16.5px; line-height: 1.5; }
+
+  /* ---------- dockerfile ---------- */
+  pre, code, svg .m, svg .lab { font-variant-ligatures: none; }
+  pre { margin: 0; background: var(--code-bg); color: var(--code-ink); border: 1px solid var(--rule); font-family: var(--mono); font-size: 14px; line-height: 1.6; padding: 18px 20px; border-radius: 10px; white-space: pre; overflow-x: auto; }
+  pre .c { color: var(--code-muted); }
+  pre .n { display: inline-block; width: 26px; color: var(--code-num); user-select: none; }
+  pre .hl { background: rgba(31,78,121,.45); display: inline-block; width: 100%; }
+  .steps { list-style: none; padding: 0; margin: 22px 0 0; max-width: none; }
+  .steps li { display: grid; grid-template-columns: 54px 1fr; gap: 14px; padding: 14px 0; border-top: 1px solid var(--rule); margin: 0; align-items: start; }
+  .steps .ln-no { font-family: var(--mono); font-size: 13px; color: var(--accent); background: var(--accent-soft); border-radius: 6px; padding: 5px 0; text-align: center; margin-top: 2px; }
+  .steps p { margin: 0; max-width: none; }
+  .cmds { display: grid; grid-template-columns: 1fr; gap: 12px; margin: 8px 0 20px; }
+  .cmd { display: grid; grid-template-columns: 1fr 240px; gap: 18px; align-items: center; background: var(--card); border: 1px solid var(--rule); border-radius: 10px; padding: 12px 16px; }
+  .cmd pre { padding: 10px 14px; font-size: 13.5px; }
+  .cmd .why { font-size: 16px; line-height: 1.45; }
+  .cmd .why b { font-family: var(--mono); font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--accent); display: block; margin-bottom: 2px; }
+  @media (max-width: 720px) { .cmd { grid-template-columns: 1fr; } }
+  .mistakes { list-style: none; padding: 0; max-width: none; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 720px) { .mistakes { grid-template-columns: 1fr; } }
+  .mistakes li { background: var(--warm-soft); border-left: 4px solid var(--warm); border-radius: 0 8px 8px 0; padding: 12px 16px; margin: 0; font-size: 16.5px; line-height: 1.5; }
+  @media print { .toc { display: none; } section { break-inside: avoid; } }
+  .chunk { margin: 18px 0 8px; }
+  .steps li { grid-template-columns: 104px 1fr; }
+  .steps .ln-no { font-size: 12px; padding: 5px 4px; overflow-wrap: anywhere; }
+  .remember code { background: rgba(255,255,255,.14); color: inherit; }
+  .chunk pre { font-size: 13.5px; }
+  pre .n { width: 30px; }
+  pre .k { color: #8fb6de; }
+  pre .c { color: var(--code-muted); }
+  .anatomy { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin: 10px 0 20px; }
+  @media (max-width: 720px) { .anatomy { grid-template-columns: 1fr; } }
+  .anatomy .word { padding: 14px 16px; }
+</style>
+<script>
+  // Apply a saved theme before first paint so the page never flashes the wrong colours.
+  try {
+    const saved = localStorage.getItem("course-doc-theme");
+    if (saved === "dark" || saved === "light") document.documentElement.dataset.theme = saved;
+  } catch (e) {}
+</script>
+</head>
+<body>
+
+<header class="mast">
+  <p class="eyebrow">Day 2 · DevOps &amp; MLOps for ML engineers · handout</p>
+  <h1>oracle.yml, line by line</h1>
+  <p class="sub">What the pipeline file actually says, one block at a time, in plain English.</p>
+</header>
+<nav class="toc" aria-label="Sections">
+  <a href="#words">The words</a><a href="#c0">Header</a><a href="#c1">Triggers</a><a href="#c2">Queueing</a><a href="#c3">Test</a><a href="#c4">Build</a><a href="#c5">Deploy</a><a href="#read">How to read any workflow</a>
+  <button class="theme" id="theme" type="button" aria-label="Switch colour theme">theme</button>
+</nav>
+
+<main>
+
+<section id="words">
+  <h2><small>00</small>The words a workflow is made of</h2>
+  <p>The file is YAML: indented keys and values, nothing more. GitHub Actions gives a handful of those keys meaning. Learn these and you can read any workflow, not just ours.</p>
+  <dl class="anatomy">
+    <div class="word"><dt>workflow</dt><dd>The whole file. One file, one pipeline. It lives in <code>.github/workflows/</code> and GitHub picks it up automatically.</dd></div>
+    <div class="word"><dt>on</dt><dd>The events that start it: a push, a pull request, a schedule, a click.</dd></div>
+    <div class="word"><dt>job</dt><dd>A unit of work that gets its own fresh machine. Jobs run in parallel unless one <code>needs</code> another.</dd></div>
+    <div class="word"><dt>step</dt><dd>One thing a job does, in order. Either <code>run</code> a shell command or <code>uses</code> an action.</dd></div>
+    <div class="word"><dt>uses</dt><dd>Reuse a published action, someone else's tested step, pinned to a version like <code>@v4</code>.</dd></div>
+    <div class="word"><dt>run</dt><dd>A shell command, exactly as you would type it. Multi-line with <code>|</code>.</dd></div>
+    <div class="word"><dt>needs</dt><dd>Wait for another job, and only continue if it succeeded. This is how the chain is built.</dd></div>
+    <div class="word"><dt>if</dt><dd>A condition. The step or job is skipped, not failed, when it is false.</dd></div>
+    <div class="word"><dt>${{ … }}</dt><dd>An expression GitHub evaluates before running: contexts like <code>github.ref</code>, <code>secrets.X</code>, <code>vars.X</code>, <code>needs.job.outputs.x</code>.</dd></div>
+    <div class="word"><dt>secrets</dt><dd>Values you paste into the repo settings once and can never read back. Masked if they appear in logs.</dd></div>
+    <div class="word"><dt>vars</dt><dd>Like secrets but readable: addresses, user names, feature flags.</dd></div>
+    <div class="word"><dt>GITHUB_TOKEN</dt><dd>A token minted for each run, scoped by <code>permissions</code>, dead when the run ends.</dd></div>
+  </dl>
+</section>
+
+<section id="c0">
+  <h2><small>01</small>The header comment</h2>
+  <div class="chunk"><pre><span class="n">1</span><span class="c"># The Oracle&#x27;s pipeline. Read it top to bottom, like the Dockerfile.</span>
+<span class="n">2</span><span class="c">#</span>
+<span class="n">3</span><span class="c">#   push to main ──▶ test ──▶ build-and-push (image to GHCR) ──▶ deploy (SSH to EC2)</span>
+<span class="n">4</span><span class="c">#   pull request ──▶ test</span>
+<span class="n">5</span><span class="c">#</span>
+<span class="n">6</span><span class="c"># Every step here is one of the six commands from Day 1, done by a machine instead of you.</span></pre></div>
+  
+<ol class="steps">
+<li><span class="ln-no">1–8</span><p><b>A comment block.</b> YAML ignores lines starting with <code>#</code>. This one is for the next person who opens the file: it draws the pipeline and states the one idea behind it. Every file that automates something should start by saying, in words, what it automates.</p></li>
+</ol>
+</section>
+<section id="c1">
+  <h2><small>02</small>What starts it</h2>
+  <div class="chunk"><pre><span class="n">8</span><span class="k">name</span>: oracle
+<span class="n">9</span>
+<span class="n">10</span><span class="k">on</span>:
+<span class="n">11</span>  <span class="k">push</span>:
+<span class="n">12</span>    <span class="k">branches</span>: [main]
+<span class="n">13</span>    <span class="k">paths</span>: [&quot;day01/oracle/**&quot;, &quot;.github/workflows/oracle.yml&quot;]
+<span class="n">14</span>  <span class="k">pull_request</span>:
+<span class="n">15</span>    <span class="k">paths</span>: [&quot;day01/oracle/**&quot;, &quot;.github/workflows/oracle.yml&quot;]</pre></div>
+  
+<ol class="steps">
+<li><span class="ln-no">name</span><p><b>The label GitHub shows</b> in the Actions tab and in the status ticks next to commits. Purely cosmetic, but pick something you can find in a list.</p></li>
+<li><span class="ln-no">on</span><p><b>The triggers.</b> This section answers one question: which events on GitHub should start this pipeline? Two are listed.</p></li>
+<li><span class="ln-no">push</span><p><b>Someone pushed commits to the <code>main</code> branch</b>, and at least one changed file sits under <code>day01/oracle/</code> or is this workflow itself. The <code>paths</code> filter is what stops a README edit from rebuilding a 700 MB image.</p></li>
+<li><span class="ln-no">pull_request</span><p><b>Someone opened or updated a pull request</b> touching the same paths. There is no branch filter here on purpose: every proposed change gets tested, but as you will see below, only <code>main</code> gets built and deployed.</p></li>
+</ol>
+</section>
+<section id="c2">
+  <h2><small>03</small>Queueing and shared names</h2>
+  <div class="chunk"><pre><span class="n">17</span><span class="c"># Two people pushing at once: runs queue up in order instead of racing each other.</span>
+<span class="n">18</span><span class="k">concurrency</span>:
+<span class="n">19</span>  <span class="k">group</span>: oracle-pipeline
+<span class="n">20</span>  <span class="k">cancel-in-progress</span>: false
+<span class="n">21</span>
+<span class="n">22</span><span class="k">env</span>:
+<span class="n">23</span>  <span class="k">APP_DIR</span>: day01/oracle
+<span class="n">24</span>  <span class="k">IMAGE_NAME</span>: oracle</pre></div>
+  
+<ol class="steps">
+<li><span class="ln-no">concurrency</span><p><b>What happens when two runs overlap.</b> All runs share one group name, so GitHub runs them one at a time, in order. <code>cancel-in-progress: false</code> means a new push waits for the current run rather than killing it. For a deploy pipeline that is the safe choice: you never want half of one deploy and half of another on the server.</p></li>
+<li><span class="ln-no">env</span><p><b>Two values used in several places</b>, defined once. <code>APP_DIR</code> is where the app lives inside the repo; <code>IMAGE_NAME</code> is the last part of the registry path. Change either here and every job follows.</p></li>
+</ol>
+</section>
+<section id="c3">
+  <h2><small>04</small>Job 1: lint and test</h2>
+  <div class="chunk"><pre><span class="n">27</span><span class="c">  # ---------------------------------------------------------------- 1. test</span>
+<span class="n">28</span>  <span class="k">test</span>:
+<span class="n">29</span>    <span class="k">name</span>: Lint and test
+<span class="n">30</span>    <span class="k">runs-on</span>: ubuntu-latest
+<span class="n">31</span>    <span class="k">defaults</span>:
+<span class="n">32</span>      <span class="k">run</span>:
+<span class="n">33</span>        <span class="k">working-directory</span>: ${{ env.APP_DIR }}
+<span class="n">34</span>    <span class="k">steps</span>:
+<span class="n">35</span>      - <span class="k">name</span>: Check out the code
+<span class="n">36</span>        <span class="k">uses</span>: actions/checkout@v4
+<span class="n">37</span>
+<span class="n">38</span>      - <span class="k">name</span>: Install uv
+<span class="n">39</span>        <span class="k">uses</span>: astral-sh/setup-uv@v6
+<span class="n">40</span>        <span class="k">with</span>:
+<span class="n">41</span>          <span class="k">enable-cache</span>: true
+<span class="n">42</span>          <span class="k">cache-dependency-glob</span>: &quot;day01/oracle/uv.lock&quot;
+<span class="n">43</span>
+<span class="n">44</span>      - <span class="k">name</span>: Install locked dependencies
+<span class="n">45</span>        <span class="k">run</span>: uv sync --frozen
+<span class="n">46</span>
+<span class="n">47</span>      - <span class="k">name</span>: Lint
+<span class="n">48</span>        <span class="k">run</span>: uv run ruff check . &amp;&amp; uv run ruff format --check .
+<span class="n">49</span>
+<span class="n">50</span>      - <span class="k">name</span>: Test
+<span class="n">51</span>        <span class="k">run</span>: uv run pytest -q</pre></div>
+  
+<ol class="steps">
+<li><span class="ln-no">jobs</span><p><b>The list of jobs.</b> Each job gets its own fresh virtual machine. Unless told otherwise, jobs run at the same time, in parallel.</p></li>
+<li><span class="ln-no">runs-on</span><p><b>Which machine.</b> <code>ubuntu-latest</code> is a Linux VM that GitHub creates for this job and deletes afterwards. It has Docker, Python, git, and curl on it, and nothing of yours.</p></li>
+<li><span class="ln-no">defaults</span><p><b>Every <code>run</code> command in this job starts inside <code>day01/oracle</code></b>, so the commands read exactly as they do on your laptop.</p></li>
+<li><span class="ln-no">checkout</span><p><b>Get the code.</b> A fresh VM has no idea what repo it is working for. This step clones the commit that triggered the run. It is the first step of almost every job ever written.</p></li>
+<li><span class="ln-no">setup-uv</span><p><b>Install uv</b>, the same tool you use locally, with a cache keyed on the lockfile so repeated runs skip the download when nothing changed.</p></li>
+<li><span class="ln-no">--frozen</span><p><b>Install exactly what the lockfile says.</b> No resolving, no "latest". This is the same line the Dockerfile runs. Laptop, image, and runner now agree byte for byte.</p></li>
+<li><span class="ln-no">Lint, Test</span><p><b>The two commands from <code>make lint</code> and <code>make test</code>.</b> If either exits non-zero, the step fails, the job fails, and because the next job <i>needs</i> this one, nothing else runs. Nobody has to remember to check.</p></li>
+</ol>
+</section>
+<section id="c4">
+  <h2><small>05</small>Job 2: build the image and push it</h2>
+  <div class="chunk"><pre><span class="n">53</span><span class="c">  # ------------------------------------------------------ 2. build and push</span>
+<span class="n">54</span>  <span class="k">build-and-push</span>:
+<span class="n">55</span>    <span class="k">name</span>: Build image and push to GHCR
+<span class="n">56</span>    <span class="k">needs</span>: test
+<span class="n">57</span>    <span class="k">if</span>: github.event_name == &#x27;push&#x27; &amp;&amp; github.ref == &#x27;refs/heads/main&#x27;
+<span class="n">58</span>    <span class="k">runs-on</span>: ubuntu-latest
+<span class="n">59</span>    <span class="k">permissions</span>:
+<span class="n">60</span>      <span class="k">contents</span>: read
+<span class="n">61</span>      <span class="k">packages</span>: write          <span class="c"># lets the built-in token push to ghcr.io</span>
+<span class="n">62</span>    <span class="k">outputs</span>:
+<span class="n">63</span>      <span class="k">image</span>: ${{ steps.meta.outputs.image }}
+<span class="n">64</span>    <span class="k">steps</span>:
+<span class="n">65</span>      - <span class="k">name</span>: Check out the code
+<span class="n">66</span>        <span class="k">uses</span>: actions/checkout@v4
+<span class="n">67</span>
+<span class="n">68</span>      - <span class="k">name</span>: Work out the image name
+<span class="n">69</span>        <span class="k">id</span>: meta
+<span class="n">70</span><span class="c">        # ghcr.io requires a lowercase owner; GitHub usernames may not be.</span>
+<span class="n">71</span>        <span class="k">run</span>: |
+<span class="n">72</span>          owner=$(echo &quot;${{ github.repository_owner }}&quot; | tr &#x27;[:upper:]&#x27; &#x27;[:lower:]&#x27;)
+<span class="n">73</span>          echo &quot;image=ghcr.io/${owner}/${IMAGE_NAME}&quot; &gt;&gt; &quot;$GITHUB_OUTPUT&quot;
+<span class="n">74</span>          echo &quot;sha=${GITHUB_SHA::7}&quot; &gt;&gt; &quot;$GITHUB_OUTPUT&quot;
+<span class="n">75</span>
+<span class="n">76</span>      - <span class="k">name</span>: Log in to GitHub Container Registry
+<span class="n">77</span>        <span class="k">uses</span>: docker/login-action@v3
+<span class="n">78</span>        <span class="k">with</span>:
+<span class="n">79</span>          <span class="k">registry</span>: ghcr.io
+<span class="n">80</span>          <span class="k">username</span>: ${{ github.actor }}
+<span class="n">81</span>          <span class="k">password</span>: ${{ secrets.GITHUB_TOKEN }}
+<span class="n">82</span>
+<span class="n">83</span>      - <span class="k">name</span>: Set up Buildx
+<span class="n">84</span>        <span class="k">uses</span>: docker/setup-buildx-action@v3
+<span class="n">85</span>
+<span class="n">86</span>      - <span class="k">name</span>: Build for x86 and push
+<span class="n">87</span>        <span class="k">uses</span>: docker/build-push-action@v6
+<span class="n">88</span>        <span class="k">with</span>:
+<span class="n">89</span>          <span class="k">context</span>: ${{ env.APP_DIR }}
+<span class="n">90</span>          <span class="k">platforms</span>: linux/amd64
+<span class="n">91</span>          <span class="k">push</span>: true
+<span class="n">92</span><span class="c">          # Two tags: an exact one for machines, a moving one for humans.</span>
+<span class="n">93</span>          <span class="k">tags</span>: |
+<span class="n">94</span>            ${{ steps.meta.outputs.image }}:${{ steps.meta.outputs.sha }}
+<span class="n">95</span>            ${{ steps.meta.outputs.image }}:latest
+<span class="n">96</span>          <span class="k">cache-from</span>: type=gha
+<span class="n">97</span>          <span class="k">cache-to</span>: type=gha,mode=max</pre></div>
+  
+<ol class="steps">
+<li><span class="ln-no">needs</span><p><b>Wait for <code>test</code> and require it to have passed.</b> This single word is the safety story of the whole pipeline: no green tests, no image.</p></li>
+<li><span class="ln-no">if</span><p><b>Only on a push to <code>main</code>.</b> A pull request has already been tested above; it must not publish anything. The two conditions together mean: proposed changes are tested, accepted changes are shipped.</p></li>
+<li><span class="ln-no">permissions</span><p><b>What the job's token may do.</b> Every run is handed a short-lived token, <code>GITHUB_TOKEN</code>, that expires when the run ends. Here it is allowed to read the repo and write packages, which is exactly enough to push an image, and nothing else.</p></li>
+<li><span class="ln-no">outputs</span><p><b>A value handed to the next job.</b> Jobs run on separate machines and share nothing, so anything the deploy job needs, such as the image name, has to be declared as an output here.</p></li>
+<li><span class="ln-no">meta</span><p><b>Work out the image name.</b> The registry wants a lowercase owner and GitHub usernames need not be, so a tiny shell script lowercases it and writes two values into <code>$GITHUB_OUTPUT</code>, which is how a step publishes values for later steps.</p></li>
+<li><span class="ln-no">login</span><p><b>Log in to <code>ghcr.io</code></b> using the run's own token as the password. No human password appears anywhere.</p></li>
+<li><span class="ln-no">buildx</span><p><b>Enable the builder</b> that can target another CPU architecture and use a remote cache.</p></li>
+<li><span class="ln-no">build-push</span><p><b>Build for x86 and push.</b> <code>platforms: linux/amd64</code> matches the t2 instances. Two tags are written: the seven-character commit hash, which never moves, and <code>latest</code>, which always points at the newest build. The <code>cache-from</code> and <code>cache-to</code> lines store the image layers in GitHub's cache, so a code-only change rebuilds one layer, exactly as on your laptop.</p></li>
+</ol>
+</section>
+<section id="c5">
+  <h2><small>06</small>Job 3: deploy to the server</h2>
+  <div class="chunk"><pre><span class="n">99</span><span class="c">  # --------------------------------------------------------------- 3. deploy</span>
+<span class="n">100</span>  <span class="k">deploy</span>:
+<span class="n">101</span>    <span class="k">name</span>: Deploy to EC2
+<span class="n">102</span>    <span class="k">needs</span>: build-and-push
+<span class="n">103</span>    <span class="k">runs-on</span>: ubuntu-latest
+<span class="n">104</span><span class="c">    # Only runs when the repo has the EC2_HOST variable set. Forks without it stop here.</span>
+<span class="n">105</span>    <span class="k">if</span>: ${{ vars.EC2_HOST != &#x27;&#x27; }}
+<span class="n">106</span>    <span class="k">environment</span>:
+<span class="n">107</span>      <span class="k">name</span>: ec2
+<span class="n">108</span>      <span class="k">url</span>: http://${{ vars.EC2_HOST }}:8000
+<span class="n">109</span>    <span class="k">steps</span>:
+<span class="n">110</span>      - <span class="k">name</span>: Put the SSH key where ssh expects it
+<span class="n">111</span>        <span class="k">run</span>: |
+<span class="n">112</span>          mkdir -p ~/.ssh
+<span class="n">113</span>          printf &#x27;%s\n&#x27; &quot;${{ secrets.EC2_SSH_KEY }}&quot; &gt; ~/.ssh/deploy_key
+<span class="n">114</span>          chmod 600 ~/.ssh/deploy_key
+<span class="n">115</span>          ssh-keyscan -H &quot;${{ vars.EC2_HOST }}&quot; &gt;&gt; ~/.ssh/known_hosts 2&gt;/dev/null
+<span class="n">116</span>
+<span class="n">117</span>      - <span class="k">name</span>: Pull the exact image and swap the container
+<span class="n">118</span>        <span class="k">run</span>: |
+<span class="n">119</span>          image=&quot;${{ needs.build-and-push.outputs.image }}:${GITHUB_SHA::7}&quot;
+<span class="n">120</span>          cat &gt; remote.sh &lt;&lt;&#x27;REMOTE&#x27;
+<span class="n">121</span>          set -euo pipefail
+<span class="n">122</span>          image=&quot;$1&quot;
+<span class="n">123</span>          docker pull &quot;$image&quot;
+<span class="n">124</span>          docker rm -f oracle 2&gt;/dev/null || true
+<span class="n">125</span>          docker run -d --restart unless-stopped -p 8000:8000 --env-file ~/.env --name oracle &quot;$image&quot;
+<span class="n">126</span>          for i in $(seq 1 30); do curl -sf localhost:8000/health &gt;/dev/null &amp;&amp; break; sleep 1; done
+<span class="n">127</span>          curl -s localhost:8000/health; echo
+<span class="n">128</span>          docker image prune -f &gt;/dev/null
+<span class="n">129</span>          REMOTE
+<span class="n">130</span>          ssh -i ~/.ssh/deploy_key &quot;${{ vars.EC2_USER || &#x27;ec2-user&#x27; }}@${{ vars.EC2_HOST }}&quot; bash -s &quot;$image&quot; &lt; remote.sh
+<span class="n">131</span>
+<span class="n">132</span>      - <span class="k">name</span>: Smoke test from the outside
+<span class="n">133</span>        <span class="k">run</span>: curl -sf &quot;http://${{ vars.EC2_HOST }}:8000/health&quot;</pre></div>
+  
+<ol class="steps">
+<li><span class="ln-no">needs</span><p><b>Wait for the image to exist.</b> Same word, same rule: nothing gets deployed that was not just built from tested code.</p></li>
+<li><span class="ln-no">if</span><p><b>Only when the repository knows a server.</b> <code>vars.EC2_HOST</code> is a repository variable set in the GitHub settings. A fork that has not set it stops cleanly after the build instead of failing with a confusing SSH error.</p></li>
+<li><span class="ln-no">environment</span><p><b>A named target with a link.</b> GitHub shows deployments per environment and turns the URL into a clickable "View deployment" button on the run. Later this is where you add approval gates for production.</p></li>
+<li><span class="ln-no">SSH key</span><p><b>Put the private key where <code>ssh</code> looks for it.</b> The key comes from the secret <code>EC2_SSH_KEY</code>, which is write-only in GitHub and masked in logs. <code>chmod 600</code> is the same permissions rule from Day 1. <code>ssh-keyscan</code> records the server's fingerprint so <code>ssh</code> does not stop to ask "are you sure?".</p></li>
+<li><span class="ln-no">remote.sh</span><p><b>Yesterday's commands, written down.</b> The script is created on the runner and then piped into <code>ssh</code> with <code>bash -s</code>, which runs it on the server. Inside it: pull the exact image by commit hash, remove the old container, start the new one with the same flags you typed by hand, wait until <code>/health</code> answers, and prune old images so the disk does not fill up. <code>set -euo pipefail</code> makes the script stop at the first error instead of carrying on blindly.</p></li>
+<li><span class="ln-no">--env-file</span><p><b>The OpenRouter key is still <code>~/.env</code> on the server.</b> The pipeline does not touch it; it only restarts the container that reads it. Day 4 moves that file into a secret manager.</p></li>
+<li><span class="ln-no">smoke</span><p><b>Check from the outside.</b> The container saying it is healthy on <code>localhost</code> is not the same as a user reaching it. This last <code>curl</code> goes through the public IP and the security group, the way a browser would. If it fails, the run is red even though everything "worked".</p></li>
+</ol>
+</section>
+<section id="read">
+  <h2><small>07</small>How to read any workflow you meet</h2>
+  <ul>
+    <li><b>Start at <code>on</code>.</b> What starts this? Until you know that, nothing else makes sense.</li>
+    <li><b>List the jobs and draw the <code>needs</code> arrows.</b> That is the pipeline diagram; everything else is detail.</li>
+    <li><b>Find every <code>if</code>.</b> These are the places where the pipeline deliberately does nothing. They are usually the most important lines.</li>
+    <li><b>Find every <code>secrets.</code> and <code>vars.</code>.</b> That is the list of things the pipeline needs from outside the repo, and therefore the list of things a new team member has to set up.</li>
+    <li><b>Read the <code>run</code> blocks last.</b> They are the commands you already know, written down once.</li>
+  </ul>
+  <p class="remember"><b>The one sentence to remember:</b> a workflow is a list of jobs, a job is a list of steps, and the arrows between jobs are spelled <code>needs</code>.</p>
+</section>
+
+</main>
+<script>
+  const root = document.documentElement;
+  const button = document.getElementById("theme");
+  const systemDark = window.matchMedia("(prefers-color-scheme: dark)");
+  function current() { return root.dataset.theme || (systemDark.matches ? "dark" : "light"); }
+  function label() { button.textContent = current() === "dark" ? "☀ light" : "☾ dark"; }
+  button.addEventListener("click", () => {
+    const next = current() === "dark" ? "light" : "dark";
+    root.dataset.theme = next;
+    try { localStorage.setItem("course-doc-theme", next); } catch (e) {}
+    label();
+  });
+  systemDark.addEventListener("change", label);
+  label();
+</script>
+</body>
+</html>

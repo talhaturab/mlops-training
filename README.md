@@ -25,11 +25,11 @@ hit the models directly, with a class leaderboard of predicted incomes.
 
 | Day | Topic |
 |---|---|
-| 1 | The Oracle: FastAPI, a LangGraph agent, and served models, locally |
-| 2 | Containers: Dockerfile, images and layers, docker compose |
-| 3 | CI: GitHub Actions running lint, tests, image build, push to a registry |
-| 4 | Cloud fundamentals: accounts, IAM, regions, first cloud deploy, secrets |
-| 5 | Splitting services and persistence: agent vs model API, Postgres, 12-factor |
+| 1 | The Oracle: FastAPI, a LangGraph agent, served models, Docker, and a manual EC2 deploy |
+| 2 | CI/CD: GitHub Actions runs tests, builds and publishes the image, deploys over SSH |
+| 3 | Managed cloud: ECR and App Runner or ECS, throwing the server away |
+| 4 | Secrets and configuration: secret managers, IAM, environments |
+| 5 | Splitting services and persistence: agent vs model API, Postgres, Compose, 12-factor |
 | 6 | Model registry and artifact storage: MLflow, object storage, versions |
 | 7 | Training pipelines: scheduled retraining, data versioning |
 | 8 | Observability: structured logs, metrics, dashboards, agent tracing |
@@ -48,4 +48,5 @@ make run                    # http://localhost:8000
 ```
 
 `make test` runs the test suite without needing a key or network access.
+A push to `main` runs the pipeline in `.github/workflows/oracle.yml`.
 `make probe` checks that your OpenRouter model can call tools.

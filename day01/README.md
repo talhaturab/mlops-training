@@ -132,7 +132,8 @@ Read the files in this order. One or two points each.
 | The API key sits in a `.env` file | Day 4 (secrets) |
 | Agent and models run in one process | Day 5 (service split) |
 | No logs, no metrics, no tracing | Day 8 (observability) |
-| Runs only on your laptop | Day 2 (containers), Day 4 (cloud), Day 9 (Kubernetes) |
+| Deploying means six commands and a 300 MB upload | Day 2 (CI/CD) |
+| One hand-built server with a public IP and no HTTPS | Day 3 (managed cloud), Day 9 (Kubernetes) |
 
 ## 6. Assignment briefing (5 min)
 
