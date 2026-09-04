@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DevOps and MLOps for ML Engineers: Programme Overview</title>
+<style>
+  :root { --ink: #1b1b1f; --muted: #5f6368; --rule: #d9dbe0; --accent: #1f4e79; --soft: #eef3f8; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #fff; color: var(--ink); font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; font-size: 14.5px; line-height: 1.5; }
+  .page { max-width: 860px; margin: 0 auto; padding: 48px 40px 56px; }
+  header { border-bottom: 3px solid var(--accent); padding-bottom: 14px; margin-bottom: 26px; }
+  .kicker { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); margin: 0 0 8px; font-weight: 600; }
+  h1 { margin: 0 0 6px; font-size: 28px; line-height: 1.15; font-weight: 700; }
+  .meta { margin: 0; color: var(--muted); font-size: 13px; }
+  h2 { font-size: 15px; letter-spacing: .06em; text-transform: uppercase; color: var(--accent); margin: 26px 0 8px; font-weight: 700; }
+  p { margin: 0 0 10px; }
+  ul { margin: 0 0 10px; padding-left: 20px; } li { margin-bottom: 4px; }
+  .facts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 6px 0 4px; }
+  .fact { background: var(--soft); border-radius: 6px; padding: 12px 14px; }
+  .fact b { display: block; font-size: 20px; color: var(--accent); margin-bottom: 2px; }
+  .fact span { font-size: 12.5px; color: var(--muted); }
+  table { width: 100%; border-collapse: collapse; margin: 6px 0 6px; font-size: 13.5px; }
+  th { text-align: left; font-size: 11.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); padding: 6px 10px 8px 0; border-bottom: 2px solid var(--ink); }
+  td { vertical-align: top; padding: 8px 10px 8px 0; border-bottom: 1px solid var(--rule); }
+  td:first-child { white-space: nowrap; width: 58px; font-weight: 700; color: var(--accent); }
+  td:nth-child(2) { width: 38%; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
+  footer { margin-top: 28px; padding-top: 12px; border-top: 1px solid var(--rule); font-size: 12px; color: var(--muted); }
+  @media (max-width: 700px) { .facts { grid-template-columns: 1fr 1fr; } .two { grid-template-columns: 1fr; } }
+  @page { size: A4; margin: 16mm 14mm; }
+  @media print { .page { padding: 0; max-width: none; } h2 { break-after: avoid; } tr { break-inside: avoid; } }
+</style>
+</head>
+<body>
+<div class="page">
+
+<header>
+  <p class="kicker">Training programme</p>
+  <h1>DevOps and MLOps for Machine Learning Engineers</h1>
+  <p class="meta">Programme overview · Prepared by Talha Turab · September 2026</p>
+</header>
+
+<h2>Purpose</h2>
+<p>Our machine learning engineers are strong at building models and weak at running them. Models that work in a notebook take weeks to reach users, deployments depend on one or two people, and cloud work is avoided or done by hand. This programme closes that gap. Each participant takes one real application from a laptop to a monitored, automatically deployed service on AWS and Azure, and learns the practices behind each step.</p>
+
+<div class="facts">
+  <div class="fact"><b>10</b><span>sessions, one hour each</span></div>
+  <div class="fact"><b>2</b><span>weeks, one session per working day</span></div>
+  <div class="fact"><b>1–2 h</b><span>hands-on assignment per day</span></div>
+  <div class="fact"><b>2</b><span>clouds: AWS and Azure</span></div>
+</div>
+
+<div class="two">
+  <div>
+    <h2>Who it is for</h2>
+    <p>ML engineers and data scientists who write Python and train models but have not deployed a service, built a container, written a CI/CD pipeline, or worked in a cloud account beyond notebooks. No DevOps background is assumed.</p>
+  </div>
+  <div>
+    <h2>How it runs</h2>
+    <p>One application is built on Day 1 and improved every day after. Each session explains the concept, shows it working, and sets an assignment that participants complete on their own copy. All code, handouts, and assignments live in one shared repository.</p>
+  </div>
+</div>
+
+<h2>What participants will be able to do afterwards</h2>
+<ul>
+  <li>Package a model and its API as a container and run it anywhere.</li>
+  <li>Set up a pipeline so that every code change is tested, built, and deployed automatically.</li>
+  <li>Deploy and operate services on AWS and Azure using managed platforms, with secrets and permissions handled correctly.</li>
+  <li>Release new versions without downtime and roll back when something fails.</li>
+  <li>Store, version, and retrain models on a schedule, and see what a service is doing in production.</li>
+  <li>Run an LLM agent on Amazon Bedrock or Azure AI Foundry rather than a third-party API.</li>
+</ul>
+
+<h2>Programme</h2>
+<table>
+  <tr><th>Day</th><th>Topics</th><th>Outcome</th></tr>
+  <tr><td>Day 1</td><td>FastAPI, LangGraph agent, containers (Docker), manual EC2 deploy</td><td>Run the app locally, put it in a container, and deploy it to a server by hand.</td></tr>
+  <tr><td>Day 2</td><td>Git, GitHub Actions, container registry, CI/CD</td><td>A push to main runs tests, builds the image, and deploys it automatically.</td></tr>
+  <tr><td>Day 3</td><td>AWS: IAM, ECR, App Runner, CloudWatch Logs</td><td>Run the image as a managed HTTPS service on AWS with no server to maintain.</td></tr>
+  <tr><td>Day 4</td><td>Azure: Entra ID roles, Azure Container Registry, Azure Web App for Containers, App Service logs</td><td>Deploy the same image on Azure and see which ideas carry across clouds.</td></tr>
+  <tr><td>Day 5</td><td>Secrets and role-based access: Secrets Manager, IAM roles, OIDC; Azure Key Vault, managed identity</td><td>No API key in any file; every service and the pipeline get only the permissions they need.</td></tr>
+  <tr><td>Day 6</td><td>Docker Compose, service split, Postgres (RDS, Azure Database for PostgreSQL)</td><td>Agent and models run as separate services; state survives restarts.</td></tr>
+  <tr><td>Day 7</td><td>ECS, Fargate, load balancer, auto scaling on metrics, alarms; Azure Container Apps</td><td>Services scale with traffic; an alarm fires when latency or errors rise.</td></tr>
+  <tr><td>Day 8</td><td>Deployment strategies: in-place, rolling, blue/green (deployment slots), gradual traffic shift, rollback</td><td>Release a new version without downtime and roll back in one step.</td></tr>
+  <tr><td>Day 9</td><td>S3 and Azure Blob Storage, MLflow model registry, Lambda and Azure Functions, scheduled retraining</td><td>Model files leave git; a scheduled function retrains, registers, and promotes the model.</td></tr>
+  <tr><td>Day 10</td><td>Amazon Bedrock, AgentCore Runtime; Azure AI Foundry models and agents; wrap-up</td><td>The agent runs on a cloud model platform, on either cloud.</td></tr>
+</table>
+
+<div class="two">
+  <div>
+    <h2>What is needed</h2>
+    <ul>
+      <li>One hour per working day for two weeks, plus assignment time.</li>
+      <li>A GitHub account per participant (free tier is sufficient).</li>
+      <li>Access to a company AWS account and an Azure subscription for the class.</li>
+      <li>Cloud spend: small. Under USD 150 in total for a class of ten over the two weeks, provided resources are stopped between sessions.</li>
+    </ul>
+  </div>
+  <div>
+    <h2>What the company gets</h2>
+    <ul>
+      <li>Engineers who can ship and operate their own models without waiting on a platform team.</li>
+      <li>A reference repository with working pipelines, deployment configurations, and written guides that can be reused on real projects.</li>
+      <li>A shared vocabulary between ML and engineering teams on containers, pipelines, permissions, and releases.</li>
+    </ul>
+  </div>
+</div>
+
+<footer>Days 1 to 3 are built and have been run end to end. Days 4 to 10 are planned and may be adjusted to the group's pace.</footer>
+
+</div>
+</body>
+</html>

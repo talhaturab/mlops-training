@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>The AWS services we use</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400;1,8..60,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    color-scheme: light;
+    --paper: #fbf8f1; --panel: #f3eee2; --card: #ffffff; --ink: #1d1a17; --muted: #6b645a; --rule: #ddd6c8;
+    --accent: #1f4e79; --accent-soft: #e4edf6; --warm: #b8562a; --warm-soft: #f6e6dc;
+    --code-bg: #1d1a17; --code-ink: #f1ebe0; --code-muted: #a39a88; --code-num: #6f675b;
+    --remember-bg: #1d1a17; --remember-ink: #fbf8f1; --remember-accent: #f3c988; --ghost: #c9c1b1;
+    --serif: "Source Serif 4", "Iowan Old Style", Charter, Georgia, serif;
+    --mono: "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
+  }
+  /* dark palette: follows the system unless the toggle has set data-theme */
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --paper: #15131a; --panel: #1f1c25; --card: #1a1820; --ink: #ebe6dc; --muted: #a59d92; --rule: #383341;
+      --accent: #8fb6de; --accent-soft: #1e2a3a; --warm: #e5906a; --warm-soft: #3a2a23;
+      --code-bg: #0e0d12; --code-ink: #e9e3d8; --code-muted: #8f877c; --code-num: #5c5666;
+      --remember-bg: #ebe6dc; --remember-ink: #15131a; --remember-accent: #8a4d24; --ghost: #4a4552;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --paper: #15131a; --panel: #1f1c25; --card: #1a1820; --ink: #ebe6dc; --muted: #a59d92; --rule: #383341;
+    --accent: #8fb6de; --accent-soft: #1e2a3a; --warm: #e5906a; --warm-soft: #3a2a23;
+    --code-bg: #0e0d12; --code-ink: #e9e3d8; --code-muted: #8f877c; --code-num: #5c5666;
+    --remember-bg: #ebe6dc; --remember-ink: #15131a; --remember-accent: #8a4d24; --ghost: #4a4552;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--serif); font-size: 18px; line-height: 1.6; }
+  a { color: var(--accent); }
+
+  /* ---------- masthead ---------- */
+  .mast { max-width: 880px; margin: 0 auto; padding: 56px 24px 20px; border-bottom: 2px solid var(--ink); }
+  .eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin: 0 0 14px; }
+  h1 { margin: 0 0 12px; font-size: clamp(38px, 6vw, 56px); line-height: 1.02; font-weight: 600; letter-spacing: -.015em; }
+  .sub { margin: 0; font-size: 21px; font-style: italic; color: var(--muted); max-width: 34ch; line-height: 1.4; }
+  .toc { max-width: 880px; margin: 0 auto; padding: 18px 24px 0; display: flex; flex-wrap: wrap; gap: 8px 22px; font-family: var(--mono); font-size: 12.5px; }
+  .toc a { color: var(--muted); text-decoration: none; border-bottom: 1px solid var(--rule); padding-bottom: 1px; }
+  .toc a:hover { color: var(--accent); border-color: var(--accent); }
+  .toc .theme { margin-left: auto; font: inherit; color: var(--muted); background: var(--card); border: 1px solid var(--rule); border-radius: 999px; padding: 4px 12px; cursor: pointer; }
+  .toc .theme:hover { color: var(--accent); border-color: var(--accent); }
+
+  /* ---------- body ---------- */
+  main { max-width: 880px; margin: 0 auto; padding: 24px 24px 96px; }
+  section { padding: 44px 0 8px; border-top: 1px solid var(--rule); margin-top: 40px; }
+  section:first-of-type { border-top: 0; margin-top: 0; }
+  h2 { font-size: 30px; line-height: 1.15; font-weight: 600; margin: 0 0 18px; letter-spacing: -.01em; }
+  h2 small { display: block; font-family: var(--mono); font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); margin-bottom: 8px; font-weight: 500; }
+  p { margin: 0 0 18px; max-width: 68ch; }
+  ul { margin: 0 0 18px; padding-left: 22px; max-width: 68ch; } li { margin-bottom: 10px; }
+  li::marker { color: var(--accent); }
+  code { font-family: var(--mono); font-size: .86em; background: var(--panel); padding: 1px 6px; border-radius: 4px; }
+  .callout { background: var(--accent-soft); border-left: 4px solid var(--accent); color: var(--ink); padding: 16px 20px; margin: 24px 0; max-width: 72ch; border-radius: 0 8px 8px 0; }
+  .callout b { color: var(--accent); }
+  .callout p:last-child { margin: 0; }
+  .remember { background: var(--remember-bg); color: var(--remember-ink); padding: 28px 30px; border-radius: 12px; font-size: 24px; line-height: 1.35; font-style: italic; margin: 32px 0 0; }
+  .remember code { background: rgba(255,255,255,.14); color: inherit; }
+  .remember b { color: var(--remember-accent); font-style: normal; }
+
+  /* ---------- figures ---------- */
+  figure { margin: 26px 0 30px; }
+  figure svg { display: block; width: 100%; height: auto; max-width: 880px; }
+  figcaption { font-family: var(--mono); font-size: 12.5px; color: var(--muted); margin-top: 10px; line-height: 1.5; }
+  figcaption b { color: var(--ink); font-weight: 500; }
+  svg text { font-family: var(--serif); font-size: 15px; fill: var(--ink); }
+  svg .m { font-family: var(--mono); font-size: 12.5px; }
+  svg .s { font-size: 12.5px; fill: var(--muted); }
+  svg .box { fill: var(--card); stroke: var(--ink); stroke-width: 1.5; }
+  svg .soft { fill: var(--panel); stroke: var(--rule); stroke-width: 1.5; }
+  svg .hi { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.8; }
+  svg .warm { fill: var(--warm-soft); stroke: var(--warm); stroke-width: 1.8; }
+  svg .ln { stroke: var(--ink); stroke-width: 1.5; fill: none; }
+  svg .ln.a { stroke: var(--accent); stroke-width: 2; }
+  svg .ln.w { stroke: var(--warm); stroke-width: 2; }
+  svg .dash { stroke-dasharray: 5 5; }
+  svg .lab { font-family: var(--mono); font-size: 12px; fill: var(--accent); }
+  svg .lab.w { fill: var(--warm); }
+
+  /* ---------- glossary ---------- */
+  .words { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 8px 0 18px; }
+  @media (max-width: 720px) { .words { grid-template-columns: 1fr; } }
+  .word { background: var(--card); border: 1px solid var(--rule); border-radius: 10px; padding: 16px 18px; }
+  .word dt { font-family: var(--mono); font-size: 15px; color: var(--accent); font-weight: 500; margin-bottom: 6px; }
+  .word dd { margin: 0; font-size: 16.5px; line-height: 1.5; }
+
+  /* ---------- dockerfile ---------- */
+  pre, code, svg .m, svg .lab { font-variant-ligatures: none; }
+  pre { margin: 0; background: var(--code-bg); color: var(--code-ink); border: 1px solid var(--rule); font-family: var(--mono); font-size: 14px; line-height: 1.6; padding: 18px 20px; border-radius: 10px; white-space: pre; overflow-x: auto; }
+  pre .c { color: var(--code-muted); }
+  pre .n { display: inline-block; width: 26px; color: var(--code-num); user-select: none; }
+  pre .hl { background: rgba(31,78,121,.45); display: inline-block; width: 100%; }
+  .steps { list-style: none; padding: 0; margin: 22px 0 0; max-width: none; }
+  .steps li { display: grid; grid-template-columns: 54px 1fr; gap: 14px; padding: 14px 0; border-top: 1px solid var(--rule); margin: 0; align-items: start; }
+  .steps .ln-no { font-family: var(--mono); font-size: 13px; color: var(--accent); background: var(--accent-soft); border-radius: 6px; padding: 5px 0; text-align: center; margin-top: 2px; }
+  .steps p { margin: 0; max-width: none; }
+  .cmds { display: grid; grid-template-columns: 1fr; gap: 12px; margin: 8px 0 20px; }
+  .cmd { display: grid; grid-template-columns: 1fr 240px; gap: 18px; align-items: center; background: var(--card); border: 1px solid var(--rule); border-radius: 10px; padding: 12px 16px; }
+  .cmd pre { padding: 10px 14px; font-size: 13.5px; }
+  .cmd .why { font-size: 16px; line-height: 1.45; }
+  .cmd .why b { font-family: var(--mono); font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--accent); display: block; margin-bottom: 2px; }
+  @media (max-width: 720px) { .cmd { grid-template-columns: 1fr; } }
+  .mistakes { list-style: none; padding: 0; max-width: none; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 720px) { .mistakes { grid-template-columns: 1fr; } }
+  .mistakes li { background: var(--warm-soft); border-left: 4px solid var(--warm); border-radius: 0 8px 8px 0; padding: 12px 16px; margin: 0; font-size: 16.5px; line-height: 1.5; }
+  @media print { .toc { display: none; } section { break-inside: avoid; } }
+  .cards { display: grid; grid-template-columns: 1fr; gap: 18px; margin: 10px 0 10px; }
+  .card { background: var(--card); border: 1px solid var(--rule); border-radius: 14px; padding: 18px 20px 16px; }
+  .card h3 { margin: 0 0 2px; font-size: 22px; }
+  .card .what { margin: 0 0 10px; font-size: 15px; color: var(--muted); font-style: italic; }
+  .card svg { display: block; width: 100%; max-width: 640px; height: auto; margin: 8px auto 12px; }
+  .card p { max-width: 68ch; }
+  .card p { margin: 0 0 6px; font-size: 16px; max-width: none; }
+  .card .day { font-family: var(--mono); font-size: 11.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); margin-top: 8px; }
+  .card svg text { font-size: 8.5px; } .card svg .m { font-size: 7.6px; } .card svg .s { font-size: 7px; } .card svg .lab { font-size: 7.2px; }
+  .card svg .box, .card svg .soft, .card svg .hi, .card svg .warm { stroke-width: 1; } .card svg .ln, .card svg .ln.a, .card svg .ln.w { stroke-width: 1.2; }
+</style>
+<script>
+  // Apply a saved theme before first paint so the page never flashes the wrong colours.
+  try {
+    const saved = localStorage.getItem("course-doc-theme");
+    if (saved === "dark" || saved === "light") document.documentElement.dataset.theme = saved;
+  } catch (e) {}
+</script>
+</head>
+<body>
+
+<header class="mast">
+  <p class="eyebrow">Day 3 · DevOps &amp; MLOps for ML engineers · handout</p>
+  <h1>The AWS services we use</h1>
+  <p class="sub">One picture and a few sentences per service.</p>
+</header>
+<nav class="toc" aria-label="Sections">
+  <a href="#map">How they fit</a><a href="#iam">IAM</a><a href="#ec2">EC2</a><a href="#ecr">ECR</a><a href="#apprunner">App Runner</a>
+  <a href="#logs">CloudWatch</a><a href="#secrets">Secrets Manager</a><a href="#s3">S3</a><a href="#rds">RDS</a>
+  <button class="theme" id="theme" type="button" aria-label="Switch colour theme">theme</button>
+</nav>
+
+<main>
+
+<section id="map">
+  <h2><small>01</small>How they fit around the Oracle</h2>
+  <p>AWS is a catalogue of separate services. Each does one job and has its own console page, its own prices, and its own permissions. We use eight of them over the course. This is where each one sits.</p>
+  <figure><svg viewBox="0 0 880 300" role="img" aria-label="Overview: a laptop pushes code to GitHub, whose pipeline pushes an image to ECR. App Runner runs the image and serves browsers over HTTPS. The app reads a secret from Secrets Manager, model files from S3, rows from RDS, and writes logs to CloudWatch. IAM decides every one of these calls."><defs><marker id="o1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
+  <rect x="20" y="110" width="90" height="46" rx="8" class="box"/><text x="65" y="138" text-anchor="middle" class="m">laptop</text>
+  <path d="M110 133 L158 133" class="ln" marker-end="url(#o1)"/><text x="134" y="124" text-anchor="middle" class="s">git push</text>
+  <rect x="160" y="110" width="110" height="46" rx="8" class="soft"/><text x="215" y="130" text-anchor="middle" class="m">GitHub</text><text x="215" y="146" text-anchor="middle" class="s">pipeline</text>
+  <rect x="300" y="14" width="560" height="272" rx="14" class="soft" stroke-dasharray="6 5"/>
+  <text x="316" y="36" class="m" style="fill:var(--muted)">AWS, LONDON REGION</text>
+  <rect x="330" y="110" width="90" height="46" rx="8" class="hi"/><text x="375" y="138" text-anchor="middle" class="m">ECR</text>
+  <path d="M270 133 L328 133" class="ln a" marker-end="url(#o1)" style="color:var(--accent)"/><text x="299" y="124" text-anchor="middle" class="lab">image</text>
+  <rect x="460" y="96" width="150" height="74" rx="10" class="hi"/><text x="535" y="120" text-anchor="middle" font-weight="600">App Runner</text><text x="535" y="140" text-anchor="middle" class="s">runs the Oracle</text><text x="535" y="156" text-anchor="middle" class="s">HTTPS</text>
+  <path d="M420 133 L458 133" class="ln a" marker-end="url(#o1)" style="color:var(--accent)"/>
+  <rect x="770" y="110" width="80" height="46" rx="8" class="box"/><text x="810" y="138" text-anchor="middle" class="m">browser</text>
+  <path d="M770 133 L612 133" class="ln a" marker-end="url(#o1)" style="color:var(--accent)"/><text x="691" y="124" text-anchor="middle" class="lab">https</text>
+  <rect x="330" y="200" width="110" height="46" rx="8" class="soft"/><text x="385" y="220" text-anchor="middle" class="m">Secrets Mgr</text><text x="385" y="236" text-anchor="middle" class="s">the API key</text>
+  <rect x="460" y="200" width="110" height="46" rx="8" class="soft"/><text x="515" y="220" text-anchor="middle" class="m">S3</text><text x="515" y="236" text-anchor="middle" class="s">model files</text>
+  <rect x="590" y="200" width="110" height="46" rx="8" class="soft"/><text x="645" y="220" text-anchor="middle" class="m">RDS</text><text x="645" y="236" text-anchor="middle" class="s">sessions, board</text>
+  <rect x="720" y="200" width="120" height="46" rx="8" class="soft"/><text x="780" y="220" text-anchor="middle" class="m">CloudWatch</text><text x="780" y="236" text-anchor="middle" class="s">logs</text>
+  <path d="M500 170 L400 198" class="ln" marker-end="url(#o1)"/><path d="M525 170 L515 198" class="ln" marker-end="url(#o1)"/><path d="M560 170 L630 198" class="ln" marker-end="url(#o1)"/><path d="M600 170 L760 198" class="ln" marker-end="url(#o1)"/>
+  <rect x="330" y="50" width="520" height="30" rx="6" class="warm"/><text x="590" y="70" text-anchor="middle" class="m">IAM: every arrow inside this box is a request that IAM allows or denies</text>
+  <text x="590" y="272" text-anchor="middle" class="s">Day 3: ECR, App Runner, CloudWatch  ·  Day 4: Secrets Manager, IAM  ·  Day 5: RDS  ·  Day 6: S3</text>
+</svg>
+    <figcaption><b>Figure 1.</b> Code goes in on the left, users come in on the right. Everything inside the dashed box is AWS, and every call inside it is checked by IAM.</figcaption>
+  </figure>
+</section>
+
+<section id="services">
+  <h2><small>02</small>Each service, one at a time</h2>
+  <div class="cards">
+
+    <div class="card" id="iam">
+      <h3>IAM</h3><p class="what">Who is allowed to do what.</p>
+      <svg viewBox="0 0 400 150" role="img" aria-label="A person or a service asks to do an action. IAM checks the request against a policy and allows or denies it."><defs><marker id="i1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
+  <rect x="10" y="30" width="90" height="44" rx="8" class="box"/><text x="55" y="50" text-anchor="middle" class="m">you, or</text><text x="55" y="65" text-anchor="middle" class="m">a service</text>
+  <path d="M100 52 L148 52" class="ln" marker-end="url(#i1)"/><text x="124" y="44" text-anchor="middle" class="s">"may I?"</text>
+  <rect x="150" y="20" width="110" height="64" rx="8" class="hi"/><text x="205" y="44" text-anchor="middle" font-weight="600">IAM</text><text x="205" y="62" text-anchor="middle" class="s">checks a policy</text><text x="205" y="76" text-anchor="middle" class="s">for this identity</text>
+  <path d="M260 40 L308 24" class="ln a" marker-end="url(#i1)" style="color:var(--accent)"/><text x="395" y="22" text-anchor="end" class="lab">allow: it runs</text>
+  <path d="M260 64 L308 80" class="ln w" marker-end="url(#i1)" style="color:var(--warm)"/><text x="395" y="90" text-anchor="end" class="lab w">deny: error</text>
+  <rect x="10" y="100" width="380" height="36" rx="6" class="soft"/><text x="200" y="122" text-anchor="middle" class="m">policy = list of allowed actions on named resources</text>
+</svg>
+      <p>Every action on AWS is a request, and IAM answers yes or no by reading a policy attached to the identity making the request. People sign in and get a <b>role</b>; services that act for you also get a role.</p><p>Nothing bypasses it. If something fails with "not authorized", the answer is a policy, not a bug in the service.</p>
+      <p class="day">Every day · Day 4 in depth</p>
+    </div>
+
+    <div class="card" id="ec2">
+      <h3>EC2</h3><p class="what">A computer you rent by the hour.</p>
+      <svg viewBox="0 0 400 150" role="img" aria-label="An EC2 instance is a rented computer with CPU, memory and a disk. A security group in front of it decides which ports are open."><defs><marker id="e1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
+  <rect x="120" y="14" width="200" height="122" rx="10" class="hi"/><text x="220" y="36" text-anchor="middle" font-weight="600">EC2 instance</text>
+  <rect x="136" y="48" width="52" height="30" rx="5" class="box"/><text x="162" y="67" text-anchor="middle" class="m">CPU</text>
+  <rect x="194" y="48" width="52" height="30" rx="5" class="box"/><text x="220" y="67" text-anchor="middle" class="m">memory</text>
+  <rect x="252" y="48" width="52" height="30" rx="5" class="box"/><text x="278" y="67" text-anchor="middle" class="m">disk</text>
+  <rect x="136" y="88" width="168" height="34" rx="5" class="soft"/><text x="220" y="109" text-anchor="middle" class="m">Linux, then whatever you install</text>
+  <rect x="330" y="40" width="60" height="70" rx="8" class="warm"/><text x="360" y="62" text-anchor="middle" class="m">security</text><text x="360" y="76" text-anchor="middle" class="m">group</text><text x="360" y="96" text-anchor="middle" class="s">ports</text>
+  <rect x="10" y="56" width="60" height="38" rx="8" class="box"/><text x="40" y="79" text-anchor="middle" class="m">you</text>
+  <path d="M70 68 L118 68" class="ln" marker-end="url(#e1)"/><text x="94" y="60" text-anchor="middle" class="s">ssh :22</text>
+  <path d="M70 86 L118 86" class="ln" marker-end="url(#e1)"/><text x="94" y="100" text-anchor="middle" class="s">http :8000</text>
+</svg>
+      <p>You choose its size and operating system. Everything else, from installing Docker to opening ports, is yours to do. The <b>security group</b> is its firewall: a list of ports and who may reach them.</p><p>It is the least managed service here, which is why we used it first.</p>
+      <p class="day">Days 1 and 2</p>
+    </div>
+
+    <div class="card" id="ecr">
+      <h3>ECR</h3><p class="what">A place to store container images inside AWS.</p>
+      <svg viewBox="0 0 400 150" role="img" aria-label="ECR stores versions of an image in a repository. A laptop or pipeline pushes; a server or App Runner pulls."><defs><marker id="r1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
+  <rect x="10" y="50" width="80" height="44" rx="8" class="box"/><text x="50" y="69" text-anchor="middle" class="m">laptop or</text><text x="50" y="84" text-anchor="middle" class="m">pipeline</text>
+  <path d="M90 72 L138 72" class="ln a" marker-end="url(#r1)" style="color:var(--accent)"/><text x="114" y="64" text-anchor="middle" class="lab">push</text>
+  <rect x="140" y="14" width="150" height="122" rx="10" class="hi"/><text x="215" y="36" text-anchor="middle" font-weight="600">ECR repository</text>
+  <rect x="156" y="48" width="118" height="22" rx="4" class="box"/><text x="215" y="63" text-anchor="middle" class="m">oracle:latest</text>
+  <rect x="156" y="76" width="118" height="22" rx="4" class="box"/><text x="215" y="91" text-anchor="middle" class="m">oracle:39081f6</text>
+  <rect x="156" y="104" width="118" height="22" rx="4" class="box"/><text x="215" y="119" text-anchor="middle" class="m">oracle:a7c21d0</text>
+  <path d="M290 72 L338 72" class="ln a" marker-end="url(#r1)" style="color:var(--accent)"/><text x="314" y="64" text-anchor="middle" class="lab">pull</text>
+  <rect x="340" y="50" width="52" height="44" rx="8" class="box"/><text x="366" y="69" text-anchor="middle" class="m">what</text><text x="366" y="84" text-anchor="middle" class="m">runs it</text>
+</svg>
+      <p>A <b>repository</b> holds the versions of one image, each with a tag. You push to it from a laptop or a pipeline; servers and App Runner pull from it.</p><p>Same idea as GitHub Container Registry. The difference is that access is decided by IAM, so AWS services can pull without a password.</p>
+      <p class="day">Day 3</p>
+    </div>
+
+    <div class="card" id="apprunner">
+      <h3>App Runner</h3><p class="what">Runs a container image as a website, no server to manage.</p>
+      <svg viewBox="0 0 400 150" role="img" aria-label="App Runner takes an image and a port and runs copies of it behind a load balancer with HTTPS. Browsers reach a URL it provides."><defs><marker id="a1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
+  <rect x="10" y="56" width="70" height="38" rx="8" class="soft"/><text x="45" y="72" text-anchor="middle" class="m">image</text><text x="45" y="86" text-anchor="middle" class="m">+ port</text>
+  <path d="M80 75 L118 75" class="ln a" marker-end="url(#a1)" style="color:var(--accent)"/>
+  <rect x="120" y="14" width="180" height="122" rx="10" class="hi"/><text x="210" y="34" text-anchor="middle" font-weight="600">App Runner</text>
+  <rect x="136" y="44" width="148" height="24" rx="5" class="box"/><text x="210" y="60" text-anchor="middle" class="m">load balancer + HTTPS</text>
+  <rect x="136" y="78" width="44" height="30" rx="5" class="box"/><text x="158" y="97" text-anchor="middle" class="m">copy</text>
+  <rect x="188" y="78" width="44" height="30" rx="5" class="box" stroke-dasharray="3 3"/><text x="210" y="97" text-anchor="middle" class="m">copy</text>
+  <rect x="240" y="78" width="44" height="30" rx="5" class="box" stroke-dasharray="3 3"/><text x="262" y="97" text-anchor="middle" class="m">copy</text>
+  <text x="210" y="126" text-anchor="middle" class="s">more copies when busy, fewer when idle</text>
+  <rect x="330" y="56" width="60" height="38" rx="8" class="box"/><text x="360" y="79" text-anchor="middle" class="m">browser</text>
+  <path d="M330 68 L302 60" class="ln a" marker-end="url(#a1)" style="color:var(--accent)"/><text x="345" y="44" text-anchor="end" class="lab">https URL</text>
+</svg>
+      <p>You give it an image and a port. It starts copies of the container, puts a load balancer in front, issues an HTTPS certificate, and gives you a URL. When a new image appears in ECR, it deploys it after a health check.</p><p>You cannot log in to the machine, because you are not given one.</p>
+      <p class="day">Day 3</p>
+    </div>
+
+    <div class="card" id="logs">
+      <h3>CloudWatch Logs</h3><p class="what">Where printed output goes when there is no terminal.</p>
+      <svg viewBox="0 0 400 150" role="img" aria-label="Whatever a container prints is collected by CloudWatch Logs into a log group, where you can read and search it after the container is gone."><defs><marker id="l1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
+  <rect x="10" y="40" width="100" height="70" rx="8" class="box"/><text x="60" y="62" text-anchor="middle" class="m">container</text><text x="60" y="80" text-anchor="middle" class="s">print(...)</text><text x="60" y="94" text-anchor="middle" class="s">uvicorn lines</text>
+  <path d="M110 75 L158 75" class="ln" marker-end="url(#l1)"/><text x="134" y="66" text-anchor="middle" class="s">stdout</text>
+  <rect x="160" y="14" width="150" height="122" rx="10" class="hi"/><text x="235" y="36" text-anchor="middle" font-weight="600">CloudWatch Logs</text>
+  <rect x="176" y="48" width="118" height="18" rx="3" class="box"/><text x="184" y="61" class="s">12:01 GET /health 200</text>
+  <rect x="176" y="70" width="118" height="18" rx="3" class="box"/><text x="184" y="83" class="s">12:01 POST /chat 200</text>
+  <rect x="176" y="92" width="118" height="18" rx="3" class="box"/><text x="184" y="105" class="s">12:02 Traceback ...</text>
+  <text x="235" y="128" text-anchor="middle" class="s">kept after the container stops</text>
+  <rect x="330" y="56" width="60" height="38" rx="8" class="box"/><text x="360" y="79" text-anchor="middle" class="m">you</text>
+  <path d="M330 75 L312 75" class="ln a" marker-end="url(#l1)" style="color:var(--accent)"/><text x="345" y="112" text-anchor="middle" class="lab">read, search</text>
+</svg>
+      <p>Anything the container writes to standard output is collected into a <b>log group</b>. You read and search it in the console, during and after the container's life.</p><p>On Day 1 this was <code>docker logs</code> over SSH. Now there is no SSH.</p>
+      <p class="day">Day 3 · Day 8 in depth</p>
+    </div>
+
+    <div class="card" id="secrets">
+      <h3>Secrets Manager</h3><p class="what">A locked store for keys and passwords.</p>
+      <svg viewBox="0 0 400 150" role="img" aria-label="Secrets Manager holds a secret value. The running app asks for it using its IAM role and receives it in memory; no file on disk contains the key."><defs><marker id="s1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
+  <rect x="10" y="14" width="150" height="122" rx="10" class="hi"/><text x="85" y="36" text-anchor="middle" font-weight="600">Secrets Manager</text>
+  <rect x="26" y="50" width="118" height="26" rx="4" class="warm"/><text x="85" y="67" text-anchor="middle" class="m">OPENROUTER_API_KEY</text>
+  <text x="85" y="98" text-anchor="middle" class="s">encrypted, versioned,</text><text x="85" y="112" text-anchor="middle" class="s">access logged</text>
+  <rect x="240" y="40" width="150" height="70" rx="8" class="box"/><text x="315" y="62" text-anchor="middle" class="m">running app</text><text x="315" y="80" text-anchor="middle" class="s">has an IAM role</text><text x="315" y="96" text-anchor="middle" class="s">value only in memory</text>
+  <path d="M240 66 L162 66" class="ln" marker-end="url(#s1)"/><text x="200" y="58" text-anchor="middle" class="s">asks, as its role</text>
+  <path d="M162 86 L238 86" class="ln a" marker-end="url(#s1)" style="color:var(--accent)"/><text x="200" y="102" text-anchor="middle" class="lab">value</text>
+  <text x="315" y="130" text-anchor="middle" class="s">no .env file anywhere</text>
+</svg>
+      <p>You put the value in once. The running app asks for it by name, using its IAM role, and gets it in memory. Access is logged and the value can be rotated without redeploying.</p><p>This removes the <code>.env</code> file from every machine.</p>
+      <p class="day">Day 4</p>
+    </div>
+
+    <div class="card" id="s3">
+      <h3>S3</h3><p class="what">Files of any size, stored by name.</p>
+      <svg viewBox="0 0 400 150" role="img" aria-label="S3 stores files of any size in buckets. Training writes model artifacts to a bucket; the app reads them at startup."><defs><marker id="b1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
+  <rect x="130" y="14" width="140" height="122" rx="10" class="hi"/><text x="200" y="36" text-anchor="middle" font-weight="600">S3 bucket</text>
+  <rect x="146" y="48" width="108" height="20" rx="3" class="box"/><text x="200" y="62" text-anchor="middle" class="s">income_model.joblib</text>
+  <rect x="146" y="72" width="108" height="20" rx="3" class="box"/><text x="200" y="86" text-anchor="middle" class="s">marriage_model.joblib</text>
+  <rect x="146" y="96" width="108" height="20" rx="3" class="box"/><text x="200" y="110" text-anchor="middle" class="s">survey_slim.csv</text>
+  <text x="200" y="130" text-anchor="middle" class="s">files, any size, by name</text>
+  <rect x="10" y="56" width="70" height="38" rx="8" class="box"/><text x="45" y="79" text-anchor="middle" class="m">training</text>
+  <path d="M80 75 L128 75" class="ln a" marker-end="url(#b1)" style="color:var(--accent)"/><text x="104" y="66" text-anchor="middle" class="lab">write</text>
+  <rect x="320" y="56" width="70" height="38" rx="8" class="box"/><text x="355" y="79" text-anchor="middle" class="m">the app</text>
+  <path d="M270 75 L318 75" class="ln a" marker-end="url(#b1)" style="color:var(--accent)"/><text x="294" y="66" text-anchor="middle" class="lab">read</text>
+</svg>
+      <p>A <b>bucket</b> holds objects: model artifacts, datasets, exported images, anything. Training jobs write to it, the app reads from it at startup, and the pipeline can do both.</p><p>It replaces the model files we committed to git on Day 1.</p>
+      <p class="day">Day 6</p>
+    </div>
+
+    <div class="card" id="rds">
+      <h3>RDS</h3><p class="what">A database AWS runs for you.</p>
+      <svg viewBox="0 0 400 150" role="img" aria-label="RDS runs a Postgres database for you. Every copy of the app reads and writes the same rows, so chat memory and the leaderboard survive restarts."><defs><marker id="d1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
+  <rect x="10" y="26" width="70" height="30" rx="6" class="box"/><text x="45" y="45" text-anchor="middle" class="m">copy 1</text>
+  <rect x="10" y="62" width="70" height="30" rx="6" class="box"/><text x="45" y="81" text-anchor="middle" class="m">copy 2</text>
+  <rect x="10" y="98" width="70" height="30" rx="6" class="box"/><text x="45" y="117" text-anchor="middle" class="m">copy 3</text>
+  <path d="M80 41 L158 70" class="ln" marker-end="url(#d1)"/><path d="M80 77 L158 77" class="ln" marker-end="url(#d1)"/><path d="M80 113 L158 84" class="ln" marker-end="url(#d1)"/>
+  <text x="120" y="60" text-anchor="middle" class="s">read, write</text>
+  <rect x="160" y="14" width="230" height="122" rx="10" class="hi"/><text x="275" y="36" text-anchor="middle" font-weight="600">RDS: Postgres, managed</text>
+  <rect x="176" y="48" width="198" height="20" rx="3" class="box"/><text x="275" y="62" text-anchor="middle" class="s">sessions: id, messages</text>
+  <rect x="176" y="72" width="198" height="20" rx="3" class="box"/><text x="275" y="86" text-anchor="middle" class="s">leaderboard: name, income</text>
+  <text x="275" y="112" text-anchor="middle" class="s">backups, patching, failover: AWS</text>
+  <text x="275" y="127" text-anchor="middle" class="s">rows survive every restart</text>
+</svg>
+      <p>A managed Postgres. Every copy of the app reads and writes the same rows, so chat sessions and the leaderboard survive restarts and are shared between copies.</p><p>Backups, patching, and failover are AWS's job. Writing the tables is ours.</p>
+      <p class="day">Day 5</p>
+    </div>
+  </div>
+</section>
+
+<section id="remember">
+  <p class="remember"><b>The one sentence to remember:</b> each AWS service does one job; the console, the price, and the permissions are separate for each one, and IAM sits in front of all of them.</p>
+</section>
+
+</main>
+<script>
+  const root = document.documentElement;
+  const button = document.getElementById("theme");
+  const systemDark = window.matchMedia("(prefers-color-scheme: dark)");
+  function current() { return root.dataset.theme || (systemDark.matches ? "dark" : "light"); }
+  function label() { button.textContent = current() === "dark" ? "☀ light" : "☾ dark"; }
+  button.addEventListener("click", () => {
+    const next = current() === "dark" ? "light" : "dark";
+    root.dataset.theme = next;
+    try { localStorage.setItem("course-doc-theme", next); } catch (e) {}
+    label();
+  });
+  systemDark.addEventListener("change", label);
+  label();
+</script>
+</body>
+</html>

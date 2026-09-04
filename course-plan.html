@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>DevOps and MLOps Training Plan</title>
+<style>
+  :root { color-scheme: light; --ink: #1c1c1e; --muted: #5f6368; --rule: #d9dbe0; --head: #0f2f4f; --band: #f3f5f8; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #fff; color: var(--ink); font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; font-size: 15px; line-height: 1.5; }
+  main { max-width: 960px; margin: 0 auto; padding: 56px 40px 64px; }
+  .eyebrow { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin: 0 0 10px; font-weight: 600; }
+  h1 { font-size: 32px; font-weight: 700; margin: 0 0 8px; color: var(--head); letter-spacing: -.01em; }
+  .lede { margin: 0 0 22px; font-size: 16px; color: var(--muted); max-width: 72ch; }
+  .facts { margin: 14px 0 26px; padding: 10px 16px; background: var(--band); border-radius: 8px; font-size: 14px; }
+  .facts b { color: var(--head); font-weight: 600; margin-right: 6px; }
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: #fff; background: var(--head); font-weight: 600; padding: 10px 12px; }
+  td { vertical-align: top; padding: 11px 12px; border-bottom: 1px solid var(--rule); }
+  tr:nth-child(even) td { background: var(--band); }
+  td:first-child { font-weight: 700; color: var(--head); white-space: nowrap; width: 70px; }
+  td:nth-child(2) { width: 38%; font-weight: 500; }
+  .foot { margin: 22px 0 0; font-size: 13px; color: var(--muted); }
+  @page { size: A4; margin: 14mm; }
+  @media print { main { padding: 0; max-width: none; } body { font-size: 13px; } th, tr:nth-child(even) td { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+</style>
+</head>
+<body>
+<main>
+  <p class="eyebrow">Training plan</p>
+  <h1>DevOps and MLOps for Machine Learning Engineers</h1>
+  <p class="facts"><b>Platforms</b> AWS, Azure, GitHub</p>
+  <table>
+    <tr><th>Day</th><th>Topics</th><th>Outcome</th></tr>
+    <tr><td>Day 1</td><td>FastAPI, LangGraph agent, containers (Docker), manual EC2 deploy</td><td>Run the app locally, put it in a container, and deploy it to a server by hand.</td></tr>
+    <tr><td>Day 2</td><td>Git, GitHub Actions, container registry, CI/CD</td><td>A push to main runs tests, builds the image, and deploys it automatically.</td></tr>
+    <tr><td>Day 3</td><td>AWS: IAM, ECR, App Runner, CloudWatch Logs</td><td>Run the image as a managed HTTPS service on AWS with no server to maintain.</td></tr>
+    <tr><td>Day 4</td><td>Azure: Entra ID roles, Azure Container Registry, Azure Web App for Containers, App Service logs</td><td>Deploy the same image on Azure and see which ideas carry across clouds and which names change.</td></tr>
+    <tr><td>Day 5</td><td>Secrets and role-based access: Secrets Manager, IAM roles, OIDC; Azure Key Vault, managed identity</td><td>No API key in any file; every service and the pipeline get only the permissions they need.</td></tr>
+    <tr><td>Day 6</td><td>Docker Compose, service split, Postgres (RDS, Azure Database for PostgreSQL)</td><td>Agent and models run as separate services; sessions and leaderboard survive restarts.</td></tr>
+    <tr><td>Day 7</td><td>ECS, Fargate, load balancer, auto scaling on metrics, alarms; Azure Container Apps as the counterpart</td><td>Services scale up and down with traffic; an alarm fires when latency or errors rise.</td></tr>
+    <tr><td>Day 8</td><td>Deployment strategies: in-place, rolling, blue/green (App Service deployment slots), gradual traffic shift, rollback</td><td>Release a new version without downtime and roll back in one step when it fails.</td></tr>
+    <tr><td>Day 9</td><td>S3 and Azure Blob Storage, MLflow model registry, Lambda and Azure Functions, scheduled retraining</td><td>Model files leave git; a scheduled function retrains, registers, and promotes the model.</td></tr>
+    <tr><td>Day 10</td><td>Amazon Bedrock, AgentCore Runtime; Azure AI Foundry models and agents; wrap-up</td><td>The agent runs on a cloud model platform instead of a third-party API, on either cloud.</td></tr>
+  </table>
+  <p class="foot">The same application is used throughout. It is built on Day 1 and each session adds one capability to it, so every topic is practised on working code.</p>
+</main>
+</body>
+</html>

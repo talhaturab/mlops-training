@@ -1,0 +1,425 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>ECR and App Runner, in plain English</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400;1,8..60,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    color-scheme: light;
+    --paper: #fbf8f1; --panel: #f3eee2; --card: #ffffff; --ink: #1d1a17; --muted: #6b645a; --rule: #ddd6c8;
+    --accent: #1f4e79; --accent-soft: #e4edf6; --warm: #b8562a; --warm-soft: #f6e6dc;
+    --code-bg: #1d1a17; --code-ink: #f1ebe0; --code-muted: #a39a88; --code-num: #6f675b;
+    --remember-bg: #1d1a17; --remember-ink: #fbf8f1; --remember-accent: #f3c988; --ghost: #c9c1b1;
+    --serif: "Source Serif 4", "Iowan Old Style", Charter, Georgia, serif;
+    --mono: "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
+  }
+  /* dark palette: follows the system unless the toggle has set data-theme */
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --paper: #15131a; --panel: #1f1c25; --card: #1a1820; --ink: #ebe6dc; --muted: #a59d92; --rule: #383341;
+      --accent: #8fb6de; --accent-soft: #1e2a3a; --warm: #e5906a; --warm-soft: #3a2a23;
+      --code-bg: #0e0d12; --code-ink: #e9e3d8; --code-muted: #8f877c; --code-num: #5c5666;
+      --remember-bg: #ebe6dc; --remember-ink: #15131a; --remember-accent: #8a4d24; --ghost: #4a4552;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --paper: #15131a; --panel: #1f1c25; --card: #1a1820; --ink: #ebe6dc; --muted: #a59d92; --rule: #383341;
+    --accent: #8fb6de; --accent-soft: #1e2a3a; --warm: #e5906a; --warm-soft: #3a2a23;
+    --code-bg: #0e0d12; --code-ink: #e9e3d8; --code-muted: #8f877c; --code-num: #5c5666;
+    --remember-bg: #ebe6dc; --remember-ink: #15131a; --remember-accent: #8a4d24; --ghost: #4a4552;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--serif); font-size: 18px; line-height: 1.6; }
+  a { color: var(--accent); }
+
+  /* ---------- masthead ---------- */
+  .mast { max-width: 880px; margin: 0 auto; padding: 56px 24px 20px; border-bottom: 2px solid var(--ink); }
+  .eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin: 0 0 14px; }
+  h1 { margin: 0 0 12px; font-size: clamp(38px, 6vw, 56px); line-height: 1.02; font-weight: 600; letter-spacing: -.015em; }
+  .sub { margin: 0; font-size: 21px; font-style: italic; color: var(--muted); max-width: 34ch; line-height: 1.4; }
+  .toc { max-width: 880px; margin: 0 auto; padding: 18px 24px 0; display: flex; flex-wrap: wrap; gap: 8px 22px; font-family: var(--mono); font-size: 12.5px; }
+  .toc a { color: var(--muted); text-decoration: none; border-bottom: 1px solid var(--rule); padding-bottom: 1px; }
+  .toc a:hover { color: var(--accent); border-color: var(--accent); }
+  .toc .theme { margin-left: auto; font: inherit; color: var(--muted); background: var(--card); border: 1px solid var(--rule); border-radius: 999px; padding: 4px 12px; cursor: pointer; }
+  .toc .theme:hover { color: var(--accent); border-color: var(--accent); }
+
+  /* ---------- body ---------- */
+  main { max-width: 880px; margin: 0 auto; padding: 24px 24px 96px; }
+  section { padding: 44px 0 8px; border-top: 1px solid var(--rule); margin-top: 40px; }
+  section:first-of-type { border-top: 0; margin-top: 0; }
+  h2 { font-size: 30px; line-height: 1.15; font-weight: 600; margin: 0 0 18px; letter-spacing: -.01em; }
+  h2 small { display: block; font-family: var(--mono); font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); margin-bottom: 8px; font-weight: 500; }
+  p { margin: 0 0 18px; max-width: 68ch; }
+  ul { margin: 0 0 18px; padding-left: 22px; max-width: 68ch; } li { margin-bottom: 10px; }
+  li::marker { color: var(--accent); }
+  code { font-family: var(--mono); font-size: .86em; background: var(--panel); padding: 1px 6px; border-radius: 4px; }
+  .callout { background: var(--accent-soft); border-left: 4px solid var(--accent); color: var(--ink); padding: 16px 20px; margin: 24px 0; max-width: 72ch; border-radius: 0 8px 8px 0; }
+  .callout b { color: var(--accent); }
+  .callout p:last-child { margin: 0; }
+  .remember { background: var(--remember-bg); color: var(--remember-ink); padding: 28px 30px; border-radius: 12px; font-size: 24px; line-height: 1.35; font-style: italic; margin: 32px 0 0; }
+  .remember code { background: rgba(255,255,255,.14); color: inherit; }
+  .remember b { color: var(--remember-accent); font-style: normal; }
+
+  /* ---------- figures ---------- */
+  figure { margin: 26px 0 30px; }
+  figure svg { display: block; width: 100%; height: auto; max-width: 880px; }
+  figcaption { font-family: var(--mono); font-size: 12.5px; color: var(--muted); margin-top: 10px; line-height: 1.5; }
+  figcaption b { color: var(--ink); font-weight: 500; }
+  svg text { font-family: var(--serif); font-size: 15px; fill: var(--ink); }
+  svg .m { font-family: var(--mono); font-size: 12.5px; }
+  svg .s { font-size: 12.5px; fill: var(--muted); }
+  svg .box { fill: var(--card); stroke: var(--ink); stroke-width: 1.5; }
+  svg .soft { fill: var(--panel); stroke: var(--rule); stroke-width: 1.5; }
+  svg .hi { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.8; }
+  svg .warm { fill: var(--warm-soft); stroke: var(--warm); stroke-width: 1.8; }
+  svg .ln { stroke: var(--ink); stroke-width: 1.5; fill: none; }
+  svg .ln.a { stroke: var(--accent); stroke-width: 2; }
+  svg .ln.w { stroke: var(--warm); stroke-width: 2; }
+  svg .dash { stroke-dasharray: 5 5; }
+  svg .lab { font-family: var(--mono); font-size: 12px; fill: var(--accent); }
+  svg .lab.w { fill: var(--warm); }
+
+  /* ---------- glossary ---------- */
+  .words { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 8px 0 18px; }
+  @media (max-width: 720px) { .words { grid-template-columns: 1fr; } }
+  .word { background: var(--card); border: 1px solid var(--rule); border-radius: 10px; padding: 16px 18px; }
+  .word dt { font-family: var(--mono); font-size: 15px; color: var(--accent); font-weight: 500; margin-bottom: 6px; }
+  .word dd { margin: 0; font-size: 16.5px; line-height: 1.5; }
+
+  /* ---------- dockerfile ---------- */
+  pre, code, svg .m, svg .lab { font-variant-ligatures: none; }
+  pre { margin: 0; background: var(--code-bg); color: var(--code-ink); border: 1px solid var(--rule); font-family: var(--mono); font-size: 14px; line-height: 1.6; padding: 18px 20px; border-radius: 10px; white-space: pre; overflow-x: auto; }
+  pre .c { color: var(--code-muted); }
+  pre .n { display: inline-block; width: 26px; color: var(--code-num); user-select: none; }
+  pre .hl { background: rgba(31,78,121,.45); display: inline-block; width: 100%; }
+  .steps { list-style: none; padding: 0; margin: 22px 0 0; max-width: none; }
+  .steps li { display: grid; grid-template-columns: 54px 1fr; gap: 14px; padding: 14px 0; border-top: 1px solid var(--rule); margin: 0; align-items: start; }
+  .steps .ln-no { font-family: var(--mono); font-size: 13px; color: var(--accent); background: var(--accent-soft); border-radius: 6px; padding: 5px 0; text-align: center; margin-top: 2px; }
+  .steps p { margin: 0; max-width: none; }
+  .cmds { display: grid; grid-template-columns: 1fr; gap: 12px; margin: 8px 0 20px; }
+  .cmd { display: grid; grid-template-columns: 1fr 240px; gap: 18px; align-items: center; background: var(--card); border: 1px solid var(--rule); border-radius: 10px; padding: 12px 16px; }
+  .cmd pre { padding: 10px 14px; font-size: 13.5px; }
+  .cmd .why { font-size: 16px; line-height: 1.45; }
+  .cmd .why b { font-family: var(--mono); font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--accent); display: block; margin-bottom: 2px; }
+  @media (max-width: 720px) { .cmd { grid-template-columns: 1fr; } }
+  .mistakes { list-style: none; padding: 0; max-width: none; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 720px) { .mistakes { grid-template-columns: 1fr; } }
+  .mistakes li { background: var(--warm-soft); border-left: 4px solid var(--warm); border-radius: 0 8px 8px 0; padding: 12px 16px; margin: 0; font-size: 16.5px; line-height: 1.5; }
+  @media print { .toc { display: none; } section { break-inside: avoid; } }
+  .services { display: grid; grid-template-columns: 1fr; gap: 14px; margin: 8px 0 22px; }
+  .svc { background: var(--card); border: 1px solid var(--rule); border-radius: 12px; padding: 18px 20px; display: grid; grid-template-columns: 150px 1fr; gap: 6px 18px; }
+  @media (max-width: 720px) { .svc { grid-template-columns: 1fr; } }
+  .svc h3 { margin: 0; font-size: 20px; grid-column: 1 / -1; }
+  .svc h3 span { font-family: var(--mono); font-size: 12px; color: var(--muted); font-weight: 400; margin-left: 8px; }
+  .svc dt { font-family: var(--mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); padding-top: 3px; }
+  .svc dd { margin: 0; font-size: 16.5px; line-height: 1.5; }
+  .svc dl { display: contents; }
+  table.cmp { width: 100%; border-collapse: collapse; margin: 8px 0 22px; font-size: 16px; }
+  table.cmp th { text-align: left; font-family: var(--mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 500; padding: 6px 10px 8px 0; border-bottom: 1px solid var(--ink); }
+  table.cmp td { vertical-align: top; padding: 9px 10px 9px 0; border-bottom: 1px solid var(--rule); }
+  table.cmp td:first-child { font-weight: 600; width: 26%; }
+  .note { font-size: 15px; color: var(--muted); }
+</style>
+<script>
+  // Apply a saved theme before first paint so the page never flashes the wrong colours.
+  try {
+    const saved = localStorage.getItem("course-doc-theme");
+    if (saved === "dark" || saved === "light") document.documentElement.dataset.theme = saved;
+  } catch (e) {}
+</script>
+</head>
+<body>
+
+<header class="mast">
+  <p class="eyebrow">Day 3 · DevOps &amp; MLOps for ML engineers · handout</p>
+  <h1>ECR and App Runner, in plain English</h1>
+  <p class="sub">Running the same image without a server you manage.</p>
+</header>
+<nav class="toc" aria-label="Sections">
+  <a href="#today">Today</a><a href="#services">The services</a><a href="#arch">Architecture</a><a href="#request">One request</a>
+  <a href="#steps">Steps</a><a href="#pipeline">Pipeline</a><a href="#compare">EC2 vs App Runner</a><a href="#cost">Cost</a><a href="#mistakes">Mistakes</a>
+  <button class="theme" id="theme" type="button" aria-label="Switch colour theme">theme</button>
+</nav>
+
+<main>
+
+<section id="today">
+  <h2><small>01</small>What we do today</h2>
+  <p>On Day 1 you rented a Linux machine, installed Docker on it, copied the image to it, and started the container yourself. On Day 2 a pipeline did the copying and starting for you, but the machine was still yours: you created it, opened its ports, put the key on it, and you would have to patch it, resize it, and replace it when it fails.</p>
+  <p>Today we give the image to AWS and AWS runs it. We use two services. <b>ECR</b> stores the image inside AWS. <b>App Runner</b> takes an image from ECR and runs it as a web service with an HTTPS address. We do not change a line of application code. The result is the same Oracle at a new URL, with no machine for us to manage.</p>
+  <p>You will also meet two services that every other AWS service depends on: <b>IAM</b>, which decides who may do what, and <b>CloudWatch Logs</b>, where the container's output goes. Both are explained below before we use them.</p>
+</section>
+
+<section id="services">
+  <h2><small>02</small>The services, one at a time</h2>
+  <p>Each service below is described the same way: what it is, what it does for us, what you configure, and how it is billed.</p>
+
+  <div class="services">
+    <div class="svc">
+      <h3>IAM <span>Identity and Access Management</span></h3>
+      <dl>
+        <dt>What it is</dt><dd>The permission system for the whole of AWS. Every action, in the console or from the command line, is a request that IAM checks against a policy before it runs. There is no "logged in as admin" state that bypasses it.</dd>
+        <dt>The words</dt><dd>A <b>user</b> is a person or a program with long-lived credentials. A <b>role</b> is a set of permissions that something assumes temporarily: you, when you sign in through the access portal; a service, when it needs to act on your behalf. A <b>policy</b> is a JSON document listing allowed and denied actions on specific resources. A <b>service control policy</b> is a policy applied by the organisation above the account; it is why some instance types are denied for us.</dd>
+        <dt>Why today</dt><dd>App Runner has to pull the image from ECR. It cannot use your login, so it assumes a role that permits only <code>ecr:GetDownloadUrlForLayer</code>, <code>ecr:BatchGetImage</code>, and a few related actions. The console creates that role for you when you tick a box; you should still know it exists.</dd>
+        <dt>Billing</dt><dd>Free.</dd>
+      </dl>
+    </div>
+
+    <div class="svc">
+      <h3>ECR <span>Elastic Container Registry</span></h3>
+      <dl>
+        <dt>What it is</dt><dd>A container registry that lives inside your AWS account, in one region. It does the same job as GitHub Container Registry: it stores images and their layers, and other machines pull from it. The difference is access control. Access to ECR is decided by IAM, so AWS services such as App Runner can be given permission to read from it without any password.</dd>
+        <dt>The words</dt><dd>A <b>repository</b> holds the versions of one image, for example all tags of <code>oracle</code>. A repository is <b>private</b> by default. The full image address is <code>ACCOUNT_ID.dkr.ecr.REGION.amazonaws.com/oracle:TAG</code>.</dd>
+        <dt>What you configure</dt><dd>The repository name, and optionally a lifecycle rule that deletes old tags so storage does not grow forever.</dd>
+        <dt>How you log in</dt><dd><code>aws ecr get-login-password</code> asks IAM for a token that is valid for 12 hours; you pipe it into <code>docker login</code>. No permanent registry password exists.</dd>
+        <dt>Billing</dt><dd>Storage per GB per month (a few cents for our image) and data transfer out of the region. Pulls by App Runner in the same region are free.</dd>
+      </dl>
+    </div>
+
+    <div class="svc">
+      <h3>App Runner <span>a managed container web service</span></h3>
+      <dl>
+        <dt>What it is</dt><dd>A service that runs a container image as a web application. You give it an image and a port. It starts one or more copies of the container on machines AWS owns, puts a load balancer in front of them, issues a TLS certificate, and gives you an HTTPS address. When traffic rises it starts more copies; when traffic stops it keeps one copy provisioned and charges you less for it.</dd>
+        <dt>What it replaces</dt><dd>Everything you did by hand on Day 1 after <code>docker build</code>: choosing a machine, installing Docker, opening ports, starting the container with a restart policy, and getting HTTPS. It also replaces the deploy job from Day 2: when a new image appears in ECR under the tag it watches, it deploys it, checks health, and only then moves traffic.</dd>
+        <dt>What you configure</dt><dd>The image address and tag. The port the app listens on (8000). CPU and memory per copy (1 vCPU, 2 GB for us). Environment variables (our <code>.env</code> contents, typed into the console). A health check path (<code>/health</code>). Whether to deploy automatically when the tag changes.</dd>
+        <dt>What you cannot do</dt><dd>Log in to the machine. Attach a disk that survives restarts. Run anything that is not an HTTP service on one port. Use an arm64 image; App Runner runs x86 only, which is why we build for <code>linux/amd64</code>.</dd>
+        <dt>Billing</dt><dd>Per vCPU-hour and per GB-hour while a copy is handling requests. When idle, only the memory is charged, at a lower rate. See the cost section.</dd>
+      </dl>
+    </div>
+
+    <div class="svc">
+      <h3>CloudWatch Logs <span>where the output goes</span></h3>
+      <dl>
+        <dt>What it is</dt><dd>The log storage service. Anything the container writes to standard output, which for us is uvicorn's request lines and Python tracebacks, is collected into a <b>log group</b> for the service, one <b>log stream</b> per running copy.</dd>
+        <dt>Why today</dt><dd>On Day 1 you ran <code>docker logs</code> over SSH. There is no SSH now. The Logs tab in App Runner, and the CloudWatch console, are the only ways to see what the app printed. Day 8 builds on this.</dd>
+        <dt>Billing</dt><dd>Per GB ingested and stored. Negligible at our volume.</dd>
+      </dl>
+    </div>
+  </div>
+</section>
+
+<section id="arch">
+  <h2><small>03</small>The architecture, before and after</h2>
+  <p>The top row is what we built on Days 1 and 2. The bottom row is today. The application, the image, and the pipeline's test and build jobs are the same in both. What changes is where the image is stored and what runs it.</p>
+
+  <figure>
+    <svg viewBox="0 0 880 486" role="img" aria-label="Before: GitHub Actions pushes the image to GHCR and connects over SSH to one EC2 instance that runs the container on port 8000 over plain HTTP, with a security group and an env file on disk. After: GitHub Actions pushes the image to ECR; App Runner pulls it, runs one or more copies behind a load balancer with TLS, and exposes an HTTPS URL; environment variables are held by the service and logs go to CloudWatch.">
+      <defs><marker id="m1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
+      <!-- BEFORE -->
+      <text x="20" y="26" font-weight="600">Days 1 and 2</text>
+      <rect x="20" y="44" width="130" height="60" rx="8" class="soft"/><text x="85" y="70" text-anchor="middle" class="m">GitHub Actions</text><text x="85" y="90" text-anchor="middle" class="s">test, build</text>
+      <rect x="210" y="44" width="130" height="60" rx="8" class="soft"/><text x="275" y="70" text-anchor="middle" class="m">GHCR</text><text x="275" y="90" text-anchor="middle" class="s">image store</text>
+      <path d="M150 64 L208 64" class="ln" marker-end="url(#m1)"/><text x="179" y="56" text-anchor="middle" class="lab" style="fill:var(--ink)">push</text>
+      <rect x="420" y="30" width="300" height="150" rx="12" class="soft" stroke-dasharray="5 4"/>
+      <text x="436" y="52" class="m" style="fill:var(--muted)">EC2 INSTANCE  ·  yours to patch, resize, replace</text>
+      <rect x="440" y="66" width="120" height="44" rx="6" class="box"/><text x="500" y="86" text-anchor="middle" class="m">Docker</text><text x="500" y="102" text-anchor="middle" class="s">installed by you</text>
+      <rect x="580" y="66" width="120" height="44" rx="6" class="box"/><text x="640" y="86" text-anchor="middle" class="m">container</text><text x="640" y="102" text-anchor="middle" class="s">uvicorn :8000</text>
+      <rect x="440" y="124" width="120" height="40" rx="6" class="warm"/><text x="500" y="149" text-anchor="middle" class="m">~/.env on disk</text>
+      <rect x="580" y="124" width="120" height="40" rx="6" class="warm"/><text x="640" y="149" text-anchor="middle" class="m">security group</text>
+      <path d="M150 90 C 300 130, 330 130, 418 100" class="ln w" marker-end="url(#m1)" style="color:var(--warm)"/><text x="330" y="140" text-anchor="middle" class="lab w">ssh: pull, rm, run</text>
+      <path d="M340 64 L418 64" class="ln dash" marker-end="url(#m1)" style="stroke:var(--ink)"/><text x="379" y="56" text-anchor="middle" class="lab" style="fill:var(--ink)">pull</text>
+      <rect x="770" y="66" width="90" height="44" rx="8" class="box"/><text x="815" y="92" text-anchor="middle" class="m">browser</text>
+      <path d="M768 88 L722 88" class="ln w" marker-end="url(#m1)" style="color:var(--warm)"/><text x="815" y="130" text-anchor="middle" class="lab w">http://IP:8000</text>
+      <text x="815" y="146" text-anchor="middle" class="s">no TLS</text>
+      <!-- divider -->
+      <line x1="20" y1="210" x2="860" y2="210" class="ln dash" style="stroke:var(--rule)"/>
+      <!-- AFTER -->
+      <text x="20" y="240" font-weight="600">Day 3</text>
+      <rect x="20" y="258" width="130" height="60" rx="8" class="soft"/><text x="85" y="284" text-anchor="middle" class="m">GitHub Actions</text><text x="85" y="304" text-anchor="middle" class="s">test, build</text>
+      <rect x="210" y="258" width="130" height="60" rx="8" class="hi"/><text x="275" y="284" text-anchor="middle" class="m">ECR</text><text x="275" y="304" text-anchor="middle" class="s">image store in AWS</text>
+      <path d="M150 278 L208 278" class="ln a" marker-end="url(#m1)" style="color:var(--accent)"/><text x="179" y="270" text-anchor="middle" class="lab">push</text>
+      <rect x="420" y="240" width="292" height="200" rx="12" class="hi"/>
+      <text x="436" y="262" class="m" style="fill:var(--muted)">APP RUNNER SERVICE  ·  managed by AWS</text>
+      <rect x="440" y="276" width="260" height="34" rx="6" class="box"/><text x="570" y="298" text-anchor="middle" class="m">load balancer + TLS certificate</text>
+      <rect x="440" y="322" width="80" height="44" rx="6" class="box"/><text x="480" y="341" text-anchor="middle" class="m">copy 1</text><text x="480" y="357" text-anchor="middle" class="s">:8000</text>
+      <rect x="530" y="322" width="80" height="44" rx="6" class="box" stroke-dasharray="4 3"/><text x="570" y="341" text-anchor="middle" class="m">copy 2</text><text x="570" y="357" text-anchor="middle" class="s">on demand</text>
+      <rect x="620" y="322" width="80" height="44" rx="6" class="box" stroke-dasharray="4 3"/><text x="660" y="341" text-anchor="middle" class="m">copy n</text><text x="660" y="357" text-anchor="middle" class="s">on demand</text>
+      <rect x="440" y="378" width="125" height="40" rx="6" class="box"/><text x="502" y="396" text-anchor="middle" class="m">env variables</text><text x="502" y="411" text-anchor="middle" class="s">held by the service</text>
+      <rect x="575" y="378" width="125" height="40" rx="6" class="box"/><text x="637" y="396" text-anchor="middle" class="m">health check</text><text x="637" y="411" text-anchor="middle" class="s">GET /health</text>
+      <path d="M340 278 L418 278" class="ln a" marker-end="url(#m1)" style="color:var(--accent)"/><text x="379" y="270" text-anchor="middle" class="lab">pulls on</text><text x="379" y="296" text-anchor="middle" class="lab">new tag</text>
+      <rect x="770" y="276" width="90" height="44" rx="8" class="box"/><text x="815" y="302" text-anchor="middle" class="m">browser</text>
+      <path d="M768 298 L714 298" class="ln a" marker-end="url(#m1)" style="color:var(--accent)"/><text x="860" y="338" text-anchor="end" class="lab">https://</text><text x="860" y="354" text-anchor="end" class="lab">…awsapprunner.com</text>
+      <rect x="770" y="378" width="90" height="44" rx="8" class="soft"/><text x="815" y="396" text-anchor="middle" class="m">CloudWatch</text><text x="815" y="412" text-anchor="middle" class="s">logs</text>
+      <path d="M712 400 L768 400" class="ln" marker-end="url(#m1)"/>
+      <text x="440" y="458" class="s">no machine, no SSH, no security group, no restart policy,</text><text x="440" y="474" class="s">no certificate to buy</text>
+    </svg>
+    <figcaption><b>Figure 1.</b> The dashed box on top is a machine we own and must maintain. The solid box below is a service AWS maintains. The image that goes into both is identical.</figcaption>
+  </figure>
+</section>
+
+<section id="request">
+  <h2><small>04</small>What happens to one request</h2>
+  <p>It helps to follow a single chat message from the browser to the model and back, because several things now happen between the user and our code that used to not exist.</p>
+
+  <figure>
+    <svg viewBox="0 0 880 212" role="img" aria-label="A request goes from the browser over HTTPS to the App Runner endpoint, which terminates TLS and forwards plain HTTP to one container copy on port 8000. The app calls its own predict endpoint on localhost inside the copy, and calls OpenRouter over the internet. Log lines go to CloudWatch.">
+      <defs><marker id="m2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
+      <rect x="10" y="60" width="100" height="50" rx="8" class="box"/><text x="60" y="90" text-anchor="middle" class="m">browser</text>
+      <path d="M110 85 L208 85" class="ln a" marker-end="url(#m2)" style="color:var(--accent)"/><text x="159" y="74" text-anchor="middle" class="lab">HTTPS :443</text>
+      <rect x="210" y="46" width="140" height="78" rx="8" class="hi"/><text x="280" y="72" text-anchor="middle" class="m">App Runner</text><text x="280" y="90" text-anchor="middle" class="m">endpoint</text><text x="280" y="110" text-anchor="middle" class="s">TLS ends here</text>
+      <path d="M350 85 L438 85" class="ln" marker-end="url(#m2)"/><text x="394" y="74" text-anchor="middle" class="lab" style="fill:var(--ink)">HTTP :8000</text>
+      <rect x="440" y="30" width="200" height="140" rx="10" class="box"/>
+      <text x="540" y="52" text-anchor="middle" class="m" style="fill:var(--muted)">ONE CONTAINER COPY</text>
+      <rect x="460" y="64" width="160" height="34" rx="6" class="soft"/><text x="540" y="86" text-anchor="middle" class="m">POST /chat</text>
+      <rect x="460" y="112" width="160" height="34" rx="6" class="soft"/><text x="540" y="134" text-anchor="middle" class="m">POST /predict/income</text>
+      <path d="M470 98 L470 110" class="ln" marker-end="url(#m2)"/><text x="610" y="108" class="s" text-anchor="end">tool call, local</text>
+      <text x="540" y="192" text-anchor="middle" class="s">MODEL_API_URL is still http://localhost:8000</text>
+      <path d="M640 80 L738 80" class="ln a" marker-end="url(#m2)" style="color:var(--accent)"/><text x="689" y="69" text-anchor="middle" class="lab">HTTPS out</text>
+      <rect x="740" y="55" width="120" height="50" rx="8" class="soft"/><text x="800" y="85" text-anchor="middle" class="m">OpenRouter</text>
+      <path d="M640 140 L738 140" class="ln" marker-end="url(#m2)"/><text x="689" y="130" text-anchor="middle" class="lab" style="fill:var(--ink)">stdout</text>
+      <rect x="740" y="115" width="120" height="50" rx="8" class="soft"/><text x="800" y="145" text-anchor="middle" class="m">CloudWatch Logs</text>
+    </svg>
+    <figcaption><b>Figure 2.</b> The browser talks HTTPS to AWS. AWS talks plain HTTP to our container on port 8000, which is why the port setting matters and why the app itself needs no certificate. Inside the copy, the agent's tool call to <code>/predict</code> is still a local call.</figcaption>
+  </figure>
+
+  <p>Two details are worth stating. First, the app never sees HTTPS; App Runner handles the certificate and forwards plain HTTP, so the Dockerfile and the uvicorn command do not change. Second, because every copy contains both the agent and the model endpoints, <code>MODEL_API_URL</code> stays <code>http://localhost:8000</code>. On Day 5, when the models become their own service, that variable changes and nothing else does.</p>
+</section>
+
+<section id="steps">
+  <h2><small>05</small>The steps</h2>
+  <p>Region: Europe (London). Replace <code>ACCOUNT_ID</code> with the twelve-digit account number shown at the top right of the console. Budget 25 minutes, most of it waiting for the first deployment.</p>
+
+  <h3 style="font-size:20px;margin:24px 0 8px">Step 1. Create the ECR repository (console)</h3>
+  <ol class="steps">
+    <li><span class="ln-no">1</span><p>Open <b>Elastic Container Registry</b>. Click <b>Create repository</b>.</p></li>
+    <li><span class="ln-no">2</span><p>Visibility <b>Private</b>. Name <code>oracle-&lt;yourname&gt;</code>. Leave the rest at defaults. Click <b>Create</b>.</p></li>
+    <li><span class="ln-no">3</span><p>Open the repository and click <b>View push commands</b>. The four commands shown are the ones in Step 2, with your account number filled in.</p></li>
+  </ol>
+
+  <h3 style="font-size:20px;margin:24px 0 8px">Step 2. Push the image once by hand (your laptop)</h3>
+<pre>aws ecr get-login-password --region eu-west-2 \
+  | docker login --username AWS --password-stdin ACCOUNT_ID.dkr.ecr.eu-west-2.amazonaws.com
+
+docker tag oracle:day1-amd64 \
+  ACCOUNT_ID.dkr.ecr.eu-west-2.amazonaws.com/oracle-&lt;yourname&gt;:latest
+docker push ACCOUNT_ID.dkr.ecr.eu-west-2.amazonaws.com/oracle-&lt;yourname&gt;:latest</pre>
+  <ol class="steps">
+    <li><span class="ln-no">login</span><p>The first command asks IAM for a 12-hour token and hands it to Docker. The user name is literally <code>AWS</code>. If this fails with an authorisation error, your command line is not signed in: run <code>aws sso login</code> first.</p></li>
+    <li><span class="ln-no">tag</span><p>A tag is a second name for the same image. The name has to start with the registry address so Docker knows where to push.</p></li>
+    <li><span class="ln-no">push</span><p>Uploads the layers. Refresh the repository page: one image, tagged <code>latest</code>, about 300 MB. Note the x86 image is required; App Runner does not run arm64.</p></li>
+  </ol>
+
+  <h3 style="font-size:20px;margin:24px 0 8px">Step 3. Create the App Runner service (console)</h3>
+  <ol class="steps">
+    <li><span class="ln-no">1</span><p>Open <b>App Runner</b>. Click <b>Create service</b>.</p></li>
+    <li><span class="ln-no">2</span><p><b>Source:</b> Container registry, Amazon ECR. <b>Browse</b> to your repository and pick the <code>latest</code> tag.</p></li>
+    <li><span class="ln-no">3</span><p><b>Deployment trigger:</b> Automatic. This is what makes a later <code>docker push</code> of the same tag redeploy the service.</p></li>
+    <li><span class="ln-no">4</span><p><b>ECR access role:</b> Create new service role. This is the IAM role that lets App Runner read from your repository. Click <b>Next</b>.</p></li>
+    <li><span class="ln-no">5</span><p><b>Service name:</b> <code>oracle-&lt;yourname&gt;</code>. <b>CPU</b> 1 vCPU, <b>Memory</b> 2 GB.</p></li>
+    <li><span class="ln-no">6</span><p><b>Environment variables:</b> add each line of your <code>.env</code> as a name and value: <code>OPENROUTER_API_KEY</code>, <code>LLM_MODEL</code>, <code>LLM_BASE_URL</code>, <code>MODEL_API_URL</code> = <code>http://localhost:8000</code>. Choose "Plain text" for now; Day 4 changes this to a Secrets Manager reference.</p></li>
+    <li><span class="ln-no">7</span><p><b>Port:</b> <code>8000</code>. This is the single most common thing to get wrong. The app listens on 8000; App Runner forwards to whatever you type here.</p></li>
+    <li><span class="ln-no">8</span><p><b>Health check:</b> Protocol HTTP, Path <code>/health</code>. App Runner calls this before sending traffic to a new copy and keeps calling it while the copy runs. Leave the intervals at their defaults.</p></li>
+    <li><span class="ln-no">9</span><p>Leave <b>Auto scaling</b>, <b>Networking</b>, and <b>Security</b> at their defaults. Click <b>Next</b>, review, <b>Create &amp; deploy</b>.</p></li>
+    <li><span class="ln-no">10</span><p>Wait. The status goes from <b>Operation in progress</b> to <b>Running</b> in five to ten minutes. The <b>Event log</b> on the service page shows each stage: pulling the image, starting a copy, health check passed, routing traffic.</p></li>
+  </ol>
+
+  <h3 style="font-size:20px;margin:24px 0 8px">Step 4. Use it</h3>
+  <ol class="steps">
+    <li><span class="ln-no">URL</span><p>Click the <b>Default domain</b>, an address ending in <code>.awsapprunner.com</code>. It is HTTPS. Chat with the Oracle.</p></li>
+    <li><span class="ln-no">Logs</span><p>Open the <b>Logs</b> tab. <b>Application logs</b> are the container's output, the same lines you saw with <code>docker logs</code>. <b>Deployment logs</b> record what App Runner itself did.</p></li>
+    <li><span class="ln-no">Update</span><p>Change a line of the app, rebuild for amd64, tag and push to ECR as <code>latest</code> again. Within a minute the service page shows a new deployment; a few minutes later the URL serves the new version. No SSH, no commands on a server.</p></li>
+  </ol>
+</section>
+
+<section id="pipeline">
+  <h2><small>06</small>Connecting the pipeline</h2>
+  <p>Step 4's manual push is what the pipeline will do from now on. The Day 2 workflow gains one job that logs in to ECR and pushes the image there, and the SSH deploy job is no longer needed for this target: App Runner redeploys on its own when the <code>latest</code> tag changes.</p>
+  <p>The job needs AWS credentials. For today they are an IAM user's access key and secret, stored as GitHub secrets, the same way the SSH key was. That is a long-lived credential sitting in a third party's vault, which is acceptable for a classroom and not for production. Day 4 replaces it with an OpenID Connect trust, where GitHub proves its identity to AWS per run and no stored key exists.</p>
+<pre>  push-to-ecr:
+    needs: build-and-push
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-west-2
+      - uses: aws-actions/amazon-ecr-login@v2
+        id: ecr
+      - run: |
+          src="ghcr.io/OWNER/oracle:${GITHUB_SHA::7}"
+          dst="${{ steps.ecr.outputs.registry }}/oracle:latest"
+          docker pull "$src"
+          docker tag "$src" "$dst"
+          docker push "$dst"</pre>
+  <ol class="steps">
+    <li><span class="ln-no">creds</span><p>Exchanges the stored access key for a session on the runner. Everything after this line runs as that IAM user.</p></li>
+    <li><span class="ln-no">login</span><p>The same 12-hour token exchange you did by hand in Step 2, as an action.</p></li>
+    <li><span class="ln-no">run</span><p>Pulls the image the previous job built, gives it the ECR name, pushes it. App Runner notices the new <code>latest</code> and deploys. The pipeline's own health check is no longer needed because App Runner refuses to route traffic to a copy that fails <code>/health</code>.</p></li>
+  </ol>
+</section>
+
+<section id="compare">
+  <h2><small>07</small>EC2 versus App Runner, item by item</h2>
+  <table class="cmp">
+    <tr><th>Concern</th><th>EC2 (Days 1 and 2)</th><th>App Runner (today)</th></tr>
+    <tr><td>Choosing and creating a machine</td><td>You, in the console, within the instance types allowed</td><td>AWS. You choose CPU and memory per copy only</td></tr>
+    <tr><td>Installing Docker</td><td>You, over SSH</td><td>Not needed</td></tr>
+    <tr><td>Opening ports</td><td>You, in a security group</td><td>Not needed. Only the HTTPS endpoint is public</td></tr>
+    <tr><td>Getting the image onto the machine</td><td>scp, or a registry pull over SSH</td><td>App Runner pulls from ECR using an IAM role</td></tr>
+    <tr><td>Starting and restarting the container</td><td><code>docker run</code> with a restart policy</td><td>Managed. Failed copies are replaced</td></tr>
+    <tr><td>HTTPS</td><td>Not done. Plain HTTP on port 8000</td><td>Included, with a certificate AWS renews</td></tr>
+    <tr><td>Handling more traffic</td><td>Buy a bigger instance, by hand</td><td>More copies start automatically, up to a limit you set</td></tr>
+    <tr><td>Secrets</td><td>A file on the disk</td><td>Environment variables held by the service; Secrets Manager on Day 4</td></tr>
+    <tr><td>Logs</td><td><code>docker logs</code> over SSH; gone when the instance is</td><td>CloudWatch Logs, kept after the copy is gone</td></tr>
+    <tr><td>Deploying a new version</td><td>The Day 2 SSH job</td><td>Push a new image to ECR; App Runner deploys with a health check</td></tr>
+    <tr><td>Logging in to the machine</td><td>SSH</td><td>Not possible</td></tr>
+    <tr><td>Persistent files</td><td>The instance disk, until the instance is terminated</td><td>None. Anything written inside a copy is lost when the copy stops</td></tr>
+    <tr><td>OS patching</td><td>You</td><td>AWS</td></tr>
+  </table>
+  <p>You give up the last three rows to get the first ten. For the Oracle, none of the three matters: the app does not need a shell, it writes nothing it needs to keep, and the only state it has (chat memory, the leaderboard) was already lost on every restart. Day 5 moves that state into a database, which is the correct fix regardless of where the app runs.</p>
+</section>
+
+<section id="cost">
+  <h2><small>08</small>What it costs</h2>
+  <p>Approximate prices for London at the time of writing. Check the pricing pages before quoting these to anyone; they change.</p>
+  <table class="cmp">
+    <tr><th>Item</th><th>Rate</th><th>Per month, running 24 hours a day</th></tr>
+    <tr><td>EC2 t2.small</td><td>about $0.026 per hour</td><td>about $19, plus a few dollars for the disk</td></tr>
+    <tr><td>App Runner, 1 vCPU / 2 GB, handling requests</td><td>about $0.064 per vCPU-hour plus $0.007 per GB-hour</td><td>about $57 if busy every minute of the month</td></tr>
+    <tr><td>App Runner, same size, idle</td><td>memory only, about $0.007 per GB-hour</td><td>about $10 if idle the whole month</td></tr>
+    <tr><td>ECR storage</td><td>about $0.10 per GB-month</td><td>under $1 for a handful of image versions</td></tr>
+  </table>
+  <p>A classroom app that is used a few hours a day sits near the idle figure. The comparison people usually make, EC2 at $19 versus App Runner at $57, assumes the App Runner service is busy around the clock, which is rarely true. It also ignores that the EC2 figure buys no HTTPS, no scaling, no patching, and no replacement when the machine fails. Whether the trade is worth it depends on how much of your time those things take.</p>
+</section>
+
+<section id="mistakes">
+  <h2><small>09</small>Mistakes to make on purpose, once</h2>
+  <ul class="mistakes">
+    <li>Port left at the default. Health checks fail forever, the service never reaches Running, and the event log says the check timed out.</li>
+    <li>Health check path left at <code>/</code>. It works, because <code>/</code> serves the page, but a broken model load would go unnoticed. Use <code>/health</code>.</li>
+    <li>No environment variables. The service starts, the page loads, and chat answers "The Oracle is asleep".</li>
+    <li>Pushing the arm64 image. The copy exits immediately with <code>exec format error</code> and App Runner retries until it gives up.</li>
+    <li>Repository in one region, service in another. The image browser in App Runner is empty. Both must be in London.</li>
+    <li>Deployment trigger set to Manual, then wondering why a push to ECR changed nothing.</li>
+  </ul>
+
+  <p class="remember"><b>The one sentence to remember:</b> App Runner takes an image and a port and does everything you did by hand on Day 1 after <code>docker build</code>; the price is that you cannot log in to the machine, because there is no machine.</p>
+</section>
+
+</main>
+<script>
+  const root = document.documentElement;
+  const button = document.getElementById("theme");
+  const systemDark = window.matchMedia("(prefers-color-scheme: dark)");
+  function current() { return root.dataset.theme || (systemDark.matches ? "dark" : "light"); }
+  function label() { button.textContent = current() === "dark" ? "☀ light" : "☾ dark"; }
+  button.addEventListener("click", () => {
+    const next = current() === "dark" ? "light" : "dark";
+    root.dataset.theme = next;
+    try { localStorage.setItem("course-doc-theme", next); } catch (e) {}
+    label();
+  });
+  systemDark.addEventListener("change", label);
+  label();
+</script>
+</body>
+</html>
