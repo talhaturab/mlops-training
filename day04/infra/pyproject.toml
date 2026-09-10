@@ -1,0 +1,16 @@
+[project]
+name = "oracle-infra"
+version = "0.1.0"
+description = "Day 4: the Oracle's AWS infrastructure, written in CDK"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "aws-cdk-lib>=2.170",
+    "constructs>=10.0",
+]
+
+[tool.uv]
+package = false
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"

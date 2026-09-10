@@ -21,6 +21,7 @@ class HealthResponse(BaseModel):
     status: str
     models_loaded: bool
     llm_configured: bool
+    store: str  # "memory" or "postgres"
 
 
 class IncomeRequest(BaseModel):

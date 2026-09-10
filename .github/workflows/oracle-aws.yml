@@ -1,0 +1,126 @@
+# Day 4: merge to main -> test -> build image -> push to ECR -> cdk deploy -> ECS runs it.
+#
+# Compare with oracle.yml (Day 2): no SSH key, no server, no docker commands over ssh.
+# The pipeline signs in to AWS with a short-lived token (OIDC) and asks CloudFormation
+# to make the stack match the code, with the new image tag as the only change.
+name: oracle-aws
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "day01/oracle/**"
+      - "day04/infra/**"
+      - ".github/workflows/oracle-aws.yml"
+  workflow_dispatch:
+
+# Never run two deploys at once; the second would wait for the first CloudFormation update.
+concurrency:
+  group: oracle-aws
+  cancel-in-progress: false
+
+env:
+  AWS_REGION: eu-west-2
+  APP_DIR: day01/oracle
+  INFRA_DIR: day04/infra
+  ECR_REPOSITORY: oracle   # created by OracleBaseStack
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ env.APP_DIR }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+      - run: uv sync --frozen
+      - run: uv run ruff check .
+      - run: uv run pytest -q
+
+  build-and-push:
+    needs: test
+    runs-on: ubuntu-latest
+    # id-token: write lets the job ask GitHub for the OIDC token it shows to AWS.
+    permissions:
+      id-token: write
+      contents: read
+    outputs:
+      image_tag: ${{ steps.meta.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+
+      # No access key anywhere. GitHub proves "this is repo X on branch main" and AWS hands
+      # back one-hour credentials for the role that OracleBaseStack created.
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      # Same as `aws ecr get-login-password | docker login` from Day 3.
+      - id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      # The image tag is the commit sha. Every deploy can be traced back to a commit.
+      - id: meta
+        run: echo "tag=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        with:
+          context: ${{ env.APP_DIR }}
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ steps.meta.outputs.tag }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    defaults:
+      run:
+        working-directory: ${{ env.INFRA_DIR }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      # The cdk command is a Node program; the stacks are Python.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm install -g aws-cdk
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+      - run: uv sync --frozen
+
+      # Show what will change before changing it. On a normal merge this is one line:
+      # the image tag. Anything else means the infrastructure code changed too.
+      - name: cdk diff
+        run: cdk diff OracleAppStack -c image_tag=${{ needs.build-and-push.outputs.image_tag }} || true
+
+      # CloudFormation updates the ECS service to the new tag and waits for the rollout.
+      # ECS sends a little traffic to the new version first (canary); if /health or the
+      # 5xx alarm fails, it rolls back to the previous image and this step fails.
+      - name: cdk deploy
+        run: >
+          cdk deploy OracleAppStack
+          -c image_tag=${{ needs.build-and-push.outputs.image_tag }}
+          --require-approval never
+          --outputs-file outputs.json
+
+      - name: Check the live service
+        run: |
+          url=$(python3 -c "import json; print(json.load(open('outputs.json'))['OracleAppStack']['ServiceUrl'])")
+          case "$url" in http*) ;; *) url="https://$url" ;; esac
+          echo "Service: $url"
+          curl -sf "$url/health"

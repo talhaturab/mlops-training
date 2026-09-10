@@ -14,6 +14,7 @@ async def health(request: Request) -> HealthResponse:
         # Always true once we are serving: a missing artifact kills startup instead.
         models_loaded=getattr(state, "models", None) is not None,
         llm_configured=state.settings.llm_configured,
+        store="postgres" if state.settings.effective_database_url else "memory",
     )
 
 

@@ -16,3 +16,9 @@ def test_fortunes_counter():
     store.record_fortune()
     store.record_fortune()
     assert store.snapshot().fortunes_told == 2
+
+
+def test_make_store_defaults_to_memory():
+    from app.store import make_store
+
+    assert isinstance(make_store(None), StatsStore)

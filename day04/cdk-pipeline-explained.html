@@ -1,0 +1,434 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Merge to main, deploy to ECS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400;1,8..60,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    color-scheme: light;
+    --paper: #fbf8f1; --panel: #f3eee2; --card: #ffffff; --ink: #1d1a17; --muted: #6b645a; --rule: #ddd6c8;
+    --accent: #1f4e79; --accent-soft: #e4edf6; --warm: #b8562a; --warm-soft: #f6e6dc;
+    --code-bg: #1d1a17; --code-ink: #f1ebe0; --code-muted: #a39a88; --code-num: #6f675b;
+    --remember-bg: #1d1a17; --remember-ink: #fbf8f1; --remember-accent: #f3c988; --ghost: #c9c1b1;
+    --serif: "Source Serif 4", "Iowan Old Style", Charter, Georgia, serif;
+    --mono: "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --paper: #15131a; --panel: #1f1c25; --card: #1a1820; --ink: #ebe6dc; --muted: #a59d92; --rule: #383341;
+      --accent: #8fb6de; --accent-soft: #1e2a3a; --warm: #e5906a; --warm-soft: #3a2a23;
+      --code-bg: #0e0d12; --code-ink: #e9e3d8; --code-muted: #8f877c; --code-num: #5c5666;
+      --remember-bg: #ebe6dc; --remember-ink: #15131a; --remember-accent: #8a4d24; --ghost: #4a4552;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --paper: #15131a; --panel: #1f1c25; --card: #1a1820; --ink: #ebe6dc; --muted: #a59d92; --rule: #383341;
+    --accent: #8fb6de; --accent-soft: #1e2a3a; --warm: #e5906a; --warm-soft: #3a2a23;
+    --code-bg: #0e0d12; --code-ink: #e9e3d8; --code-muted: #8f877c; --code-num: #5c5666;
+    --remember-bg: #ebe6dc; --remember-ink: #15131a; --remember-accent: #8a4d24; --ghost: #4a4552;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--serif); font-size: 18px; line-height: 1.6; }
+  a { color: var(--accent); }
+
+  .mast { max-width: 880px; margin: 0 auto; padding: 56px 24px 20px; border-bottom: 2px solid var(--ink); }
+  .eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin: 0 0 14px; }
+  h1 { margin: 0 0 12px; font-size: clamp(38px, 6vw, 56px); line-height: 1.02; font-weight: 600; letter-spacing: -.015em; }
+  .sub { margin: 0; font-size: 21px; font-style: italic; color: var(--muted); max-width: 34ch; line-height: 1.4; }
+  .toc { max-width: 880px; margin: 0 auto; padding: 18px 24px 0; display: flex; flex-wrap: wrap; gap: 8px 22px; font-family: var(--mono); font-size: 12.5px; }
+  .toc a { color: var(--muted); text-decoration: none; border-bottom: 1px solid var(--rule); padding-bottom: 1px; }
+  .toc a:hover { color: var(--accent); border-color: var(--accent); }
+  .toc .theme { margin-left: auto; font: inherit; color: var(--muted); background: var(--card); border: 1px solid var(--rule); border-radius: 999px; padding: 4px 12px; cursor: pointer; }
+  .toc .theme:hover { color: var(--accent); border-color: var(--accent); }
+
+  main { max-width: 880px; margin: 0 auto; padding: 24px 24px 96px; }
+  section { padding: 44px 0 8px; border-top: 1px solid var(--rule); margin-top: 40px; }
+  section:first-of-type { border-top: 0; margin-top: 0; }
+  h2 { font-size: 30px; line-height: 1.15; font-weight: 600; margin: 0 0 18px; letter-spacing: -.01em; }
+  h2 small { display: block; font-family: var(--mono); font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); margin-bottom: 8px; font-weight: 500; }
+  h3 { font-size: 21px; margin: 26px 0 10px; }
+  p { margin: 0 0 18px; max-width: 68ch; }
+  ul { margin: 0 0 18px; padding-left: 22px; max-width: 68ch; } li { margin-bottom: 10px; }
+  li::marker { color: var(--accent); }
+  code { font-family: var(--mono); font-size: .86em; background: var(--panel); padding: 1px 6px; border-radius: 4px; }
+  .callout { background: var(--accent-soft); border-left: 4px solid var(--accent); color: var(--ink); padding: 16px 20px; margin: 24px 0; max-width: 72ch; border-radius: 0 8px 8px 0; }
+  .callout b { color: var(--accent); }
+  .callout p:last-child { margin: 0; }
+  .remember { background: var(--remember-bg); color: var(--remember-ink); padding: 28px 30px; border-radius: 12px; font-size: 24px; line-height: 1.35; font-style: italic; margin: 32px 0 0; }
+  .remember code { background: rgba(255,255,255,.14); color: inherit; }
+  .remember b { color: var(--remember-accent); font-style: normal; }
+
+  figure { margin: 26px 0 30px; }
+  figure svg { display: block; width: 100%; height: auto; max-width: 880px; }
+  figcaption { font-family: var(--mono); font-size: 12.5px; color: var(--muted); margin-top: 10px; line-height: 1.5; }
+  figcaption b { color: var(--ink); font-weight: 500; }
+  svg text { font-family: var(--serif); font-size: 15px; fill: var(--ink); }
+  svg .m { font-family: var(--mono); font-size: 12.5px; }
+  svg .s { font-size: 12.5px; fill: var(--muted); }
+  svg .box { fill: var(--card); stroke: var(--ink); stroke-width: 1.5; }
+  svg .soft { fill: var(--panel); stroke: var(--rule); stroke-width: 1.5; }
+  svg .hi { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.8; }
+  svg .warm { fill: var(--warm-soft); stroke: var(--warm); stroke-width: 1.8; }
+  svg .ln { stroke: var(--ink); stroke-width: 1.5; fill: none; }
+  svg .ln.a { stroke: var(--accent); stroke-width: 2; }
+  svg .ln.w { stroke: var(--warm); stroke-width: 2; }
+  svg .dash { stroke-dasharray: 5 5; }
+  svg .lab { font-family: var(--mono); font-size: 12px; fill: var(--accent); }
+  svg .lab.w { fill: var(--warm); }
+
+  .words { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 8px 0 18px; }
+  @media (max-width: 720px) { .words { grid-template-columns: 1fr; } }
+  .word { background: var(--card); border: 1px solid var(--rule); border-radius: 10px; padding: 16px 18px; }
+  .word dt { font-family: var(--mono); font-size: 15px; color: var(--accent); font-weight: 500; margin-bottom: 6px; }
+  .word dd { margin: 0; font-size: 16.5px; line-height: 1.5; }
+
+  pre, code, svg .m, svg .lab { font-variant-ligatures: none; }
+  pre { margin: 0; background: var(--code-bg); color: var(--code-ink); border: 1px solid var(--rule); font-family: var(--mono); font-size: 14px; line-height: 1.6; padding: 18px 20px; border-radius: 10px; white-space: pre; overflow-x: auto; }
+  pre .c { color: var(--code-muted); }
+  pre .n { display: inline-block; width: 26px; color: var(--code-num); user-select: none; }
+  pre .add { color: #8fd18f; } pre .del { color: #e89a8a; } pre .mod { color: #f3c988; }
+  .steps { list-style: none; padding: 0; margin: 22px 0 0; max-width: none; }
+  .steps li { display: grid; grid-template-columns: 54px 1fr; gap: 14px; padding: 14px 0; border-top: 1px solid var(--rule); margin: 0; align-items: start; }
+  .steps .ln-no { font-family: var(--mono); font-size: 13px; color: var(--accent); background: var(--accent-soft); border-radius: 6px; padding: 5px 0; text-align: center; margin-top: 2px; }
+  .steps p { margin: 0; max-width: none; }
+  .cmds { display: grid; grid-template-columns: 1fr; gap: 12px; margin: 8px 0 20px; }
+  .cmd { display: grid; grid-template-columns: 1fr 260px; gap: 18px; align-items: center; background: var(--card); border: 1px solid var(--rule); border-radius: 10px; padding: 12px 16px; }
+  .cmd pre { padding: 10px 14px; font-size: 13.5px; }
+  .cmd .why { font-size: 16px; line-height: 1.45; }
+  .cmd .why b { font-family: var(--mono); font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--accent); display: block; margin-bottom: 2px; }
+  @media (max-width: 720px) { .cmd { grid-template-columns: 1fr; } }
+  .mistakes { list-style: none; padding: 0; max-width: none; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 720px) { .mistakes { grid-template-columns: 1fr; } }
+  .mistakes li { background: var(--warm-soft); border-left: 4px solid var(--warm); border-radius: 0 8px 8px 0; padding: 12px 16px; margin: 0; font-size: 16.5px; line-height: 1.5; }
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 24px; font-size: 16.5px; }
+  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  th { font-family: var(--mono); font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+  td:first-child { font-weight: 600; width: 30%; }
+  @media print { .toc { display: none; } section { break-inside: avoid; } }
+</style>
+<script>
+  try {
+    const saved = localStorage.getItem("course-doc-theme");
+    if (saved === "dark" || saved === "light") document.documentElement.dataset.theme = saved;
+  } catch (e) {}
+</script>
+</head>
+<body>
+
+<header class="mast">
+  <p class="eyebrow">Day 4 · DevOps &amp; MLOps for ML engineers · handout</p>
+  <h1>Merge to main, deploy to ECS</h1>
+  <p class="sub">GitHub Actions, CDK, ECS Express Mode and a Postgres database, with no server and no password anywhere.</p>
+</header>
+<nav class="toc" aria-label="Sections">
+  <a href="#goal">Goal</a><a href="#arch">Architecture</a><a href="#stacks">Two stacks</a><a href="#oidc">Trust</a><a href="#pipeline">Pipeline</a>
+  <a href="#merge">On merge</a><a href="#network">Network</a><a href="#secrets">Secrets</a><a href="#setup">Setup</a><a href="#rollback">Rollback</a><a href="#cost">Cost</a><a href="#mistakes">Mistakes</a>
+  <button class="theme" id="theme" type="button" aria-label="Switch colour theme">theme</button>
+</nav>
+
+<main>
+
+<section id="goal">
+  <h2><small>01</small>The goal</h2>
+  <p>On Day 2 a merge to main built an image and used an SSH key to log in to one EC2 server and run it. Today the same merge builds an image, tells CloudFormation which image the ECS service should run, and CloudFormation makes it so. Nothing is logged in to, and nothing is stored that could leak.</p>
+  <figure><svg viewBox="0 0 880 350" role="img" aria-label="Day 2: GitHub pushes an image to GHCR, then uses an SSH key from its secrets to log in to an EC2 server and run docker pull and docker run. Day 4: GitHub gets a one-hour token from AWS, pushes the image to ECR, and runs cdk deploy; CloudFormation updates the ECS service, whose container also talks to RDS."><defs><marker id="g1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
+  <text x="20" y="34" class="m" style="fill:var(--muted)">DAY 2</text>
+  <rect x="20" y="50" width="120" height="60" rx="8" class="box"/><text x="80" y="76" text-anchor="middle" class="m">GitHub</text><text x="80" y="96" text-anchor="middle" class="s">Actions job</text>
+  <path d="M140 80 L208 80" class="ln" marker-end="url(#g1)"/><text x="174" y="70" text-anchor="middle" class="s">push</text>
+  <rect x="210" y="50" width="110" height="60" rx="8" class="soft"/><text x="265" y="76" text-anchor="middle" class="m">GHCR</text><text x="265" y="96" text-anchor="middle" class="s">image</text>
+  <path d="M320 80 L448 80" class="ln w" marker-end="url(#g1)" style="color:var(--warm)"/><text x="384" y="70" text-anchor="middle" class="lab w">ssh, with a key</text>
+  <rect x="450" y="40" width="200" height="80" rx="8" class="warm"/><text x="550" y="66" text-anchor="middle" class="m">EC2 server</text><text x="550" y="86" text-anchor="middle" class="s">docker pull, docker run</text><text x="550" y="104" text-anchor="middle" class="s">you patch it, you restart it</text>
+  <rect x="680" y="40" width="180" height="80" rx="8" class="soft"/><text x="770" y="66" text-anchor="middle" class="s">the key lives in GitHub</text><text x="770" y="84" text-anchor="middle" class="s">secrets and never expires;</text><text x="770" y="102" text-anchor="middle" class="s">port 22 is open to the world</text>
+
+  <path d="M20 145 L860 145" class="ln dash" style="stroke:var(--rule)"/>
+  <text x="20" y="176" class="m" style="fill:var(--muted)">DAY 4</text>
+  <rect x="20" y="192" width="120" height="60" rx="8" class="box"/><text x="80" y="218" text-anchor="middle" class="m">GitHub</text><text x="80" y="238" text-anchor="middle" class="s">Actions job</text>
+  <path d="M140 210 L208 210" class="ln a" marker-end="url(#g1)" style="color:var(--accent)"/><text x="174" y="200" text-anchor="middle" class="lab">push</text>
+  <rect x="210" y="192" width="110" height="60" rx="8" class="hi"/><text x="265" y="218" text-anchor="middle" class="m">ECR</text><text x="265" y="238" text-anchor="middle" class="s">image :sha</text>
+  <path d="M80 252 L80 290 L445 290 L445 254" class="ln a" marker-end="url(#g1)" style="color:var(--accent)"/><text x="262" y="308" text-anchor="middle" class="lab">cdk deploy -c image_tag=sha</text>
+  <rect x="370" y="192" width="150" height="60" rx="8" class="box"/><text x="445" y="218" text-anchor="middle" class="m">CloudFormation</text><text x="445" y="238" text-anchor="middle" class="s">"tag changed"</text>
+  <path d="M520 222 L578 222" class="ln" marker-end="url(#g1)"/>
+  <rect x="580" y="182" width="130" height="80" rx="8" class="hi"/><text x="645" y="208" text-anchor="middle" class="m">ECS, Fargate</text><text x="645" y="228" text-anchor="middle" class="s">rolls out :sha</text><text x="645" y="246" text-anchor="middle" class="s">checks /health</text>
+  <path d="M710 222 L768 222" class="ln" marker-end="url(#g1)"/>
+  <rect x="770" y="192" width="90" height="60" rx="8" class="hi"/><text x="815" y="218" text-anchor="middle" class="m">RDS</text><text x="815" y="238" text-anchor="middle" class="s">Postgres</text>
+  <text x="440" y="336" text-anchor="middle" class="s">the job holds a one-hour token from AWS, not a key; there is no server and no port 22</text>
+</svg>
+    <figcaption><b>Figure 1.</b> Same trigger, same image. What changed is who does the deploying (CloudFormation, not a shell script over SSH) and how the pipeline proves who it is.</figcaption>
+  </figure>
+</section>
+
+<section id="arch">
+  <h2><small>02</small>What gets built</h2>
+  <figure><svg viewBox="0 0 880 420" role="img" aria-label="GitHub Actions on the left pushes an image to ECR and runs cdk deploy against CloudFormation. Inside AWS, inside a VPC: a load balancer with HTTPS in the public subnets receives browser traffic and forwards it to a Fargate task running the image; the task reads a Postgres database in the isolated subnets. Secrets Manager holds the two secrets ECS injects at start. ECR and the deploy role belong to the base stack; everything else to the app stack."><defs><marker id="a1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
+  <rect x="20" y="130" width="140" height="120" rx="10" class="box"/><text x="90" y="156" text-anchor="middle" font-weight="600">GitHub Actions</text><text x="90" y="180" text-anchor="middle" class="s">test</text><text x="90" y="200" text-anchor="middle" class="s">build, push</text><text x="90" y="220" text-anchor="middle" class="s">cdk deploy</text>
+  <rect x="200" y="14" width="600" height="392" rx="14" class="soft" stroke-dasharray="6 5"/><text x="216" y="36" class="m" style="fill:var(--muted)">AWS, LONDON</text>
+
+  <rect x="220" y="56" width="150" height="60" rx="8" class="warm"/><text x="295" y="80" text-anchor="middle" class="m">deploy role</text><text x="295" y="100" text-anchor="middle" class="s">trusts this repo, main</text>
+  <rect x="220" y="130" width="150" height="60" rx="8" class="warm"/><text x="295" y="154" text-anchor="middle" class="m">ECR</text><text x="295" y="174" text-anchor="middle" class="s">oracle:sha</text>
+  <path d="M160 160 L218 160" class="ln a" marker-end="url(#a1)" style="color:var(--accent)"/>
+  <path d="M160 200 L218 90" class="ln dash" marker-end="url(#a1)"/><text x="150" y="100" text-anchor="end" class="s">assume</text>
+  <rect x="220" y="216" width="150" height="60" rx="8" class="box"/><text x="295" y="240" text-anchor="middle" class="m">CloudFormation</text><text x="295" y="260" text-anchor="middle" class="s">OracleAppStack</text>
+  <path d="M160 230 L218 246" class="ln a" marker-end="url(#a1)" style="color:var(--accent)"/>
+  <path d="M370 250 L398 250" class="ln dash" marker-end="url(#a1)"/>
+
+  <rect x="400" y="56" width="200" height="54" rx="8" class="hi"/><text x="500" y="78" text-anchor="middle" class="m">Secrets Manager</text><text x="500" y="98" text-anchor="middle" class="s">db password · OpenRouter key</text>
+  <rect x="620" y="56" width="160" height="54" rx="8" class="soft"/><rect x="632" y="68" width="14" height="10" class="warm"/><text x="652" y="78" class="s">base: once, by hand</text><rect x="632" y="88" width="14" height="10" class="hi"/><text x="652" y="98" class="s">app: every merge</text>
+
+  <rect x="400" y="130" width="380" height="260" rx="10" class="soft"/><text x="764" y="152" text-anchor="end" class="m" style="fill:var(--muted)">VPC · private network</text>
+  <rect x="416" y="166" width="348" height="120" rx="8" class="box" stroke-dasharray="3 3"/><text x="750" y="184" text-anchor="end" class="s">public subnets</text>
+  <rect x="430" y="196" width="150" height="76" rx="8" class="hi"/><text x="505" y="220" text-anchor="middle" class="m">Fargate task</text><text x="505" y="240" text-anchor="middle" class="s">runs oracle:sha</text><text x="505" y="258" text-anchor="middle" class="s">port 8000</text>
+  <rect x="600" y="196" width="150" height="76" rx="8" class="hi"/><text x="675" y="220" text-anchor="middle" class="m">load balancer</text><text x="675" y="240" text-anchor="middle" class="s">https, made by ECS</text><text x="675" y="258" text-anchor="middle" class="s">…ecs.eu-west-2.on.aws</text>
+  <path d="M600 234 L582 234" class="ln a" marker-end="url(#a1)" style="color:var(--accent)"/>
+  <rect x="416" y="296" width="348" height="80" rx="8" class="box" stroke-dasharray="3 3"/><text x="750" y="314" text-anchor="end" class="s">isolated subnets · no route out</text>
+  <rect x="430" y="322" width="150" height="44" rx="8" class="hi"/><text x="505" y="349" text-anchor="middle" class="m">RDS Postgres</text>
+  <path d="M505 272 L505 320" class="ln a" marker-end="url(#a1)" style="color:var(--accent)"/><text x="516" y="288" class="lab">5432</text>
+  <path d="M370 165 L428 205" class="ln" marker-end="url(#a1)"/><text x="408" y="176" class="s">pull</text>
+  <path d="M500 110 L500 194" class="ln" marker-end="url(#a1)"/><text x="512" y="140" class="s">at start</text>
+
+  <rect x="815" y="204" width="60" height="60" rx="8" class="box"/><text x="845" y="238" text-anchor="middle" class="m">browser</text>
+  <path d="M815 234 L752 234" class="ln a" marker-end="url(#a1)" style="color:var(--accent)"/><text x="845" y="286" text-anchor="middle" class="lab">https</text>
+</svg>
+    <figcaption><b>Figure 2.</b> Everything inside the dashed box is created by the two CDK stacks, directly or through ECS. Nothing was clicked in the console. Browsers reach the load balancer over HTTPS; only the load balancer reaches the task; only the task reaches the database.</figcaption>
+  </figure>
+</section>
+
+<section id="stacks">
+  <h2><small>03</small>Why two stacks</h2>
+  <p>The pipeline cannot create the role it needs to log in, and it cannot push an image to a repository that does not exist yet. So those two things are made first, by hand, once. Everything else is made by the pipeline.</p>
+  <figure><svg viewBox="0 0 880 250" role="img" aria-label="Two panels. OracleBaseStack: deployed once by hand from a laptop; contains the ECR repository and the GitHub trust (OIDC provider and deploy role); 85 lines. OracleAppStack: deployed on every merge by the pipeline; contains the VPC, RDS Postgres, two IAM roles and the ECS Express service; about 170 lines. The only input that changes is image_tag."><defs><marker id="t1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
+  <rect x="20" y="20" width="400" height="210" rx="14" class="soft"/><text x="40" y="46" class="m" style="fill:var(--warm)">OracleBaseStack · stacks/base_stack.py</text>
+  <text x="40" y="70" class="s">deployed once, by hand, from a laptop</text>
+  <rect x="40" y="86" width="360" height="40" rx="6" class="warm"/><text x="220" y="111" text-anchor="middle" class="m">ECR repository "oracle"</text>
+  <rect x="40" y="136" width="360" height="56" rx="6" class="warm"/><text x="220" y="158" text-anchor="middle" class="m">GitHub trust</text><text x="220" y="178" text-anchor="middle" class="s">OIDC provider + role "oracle-github-deploy"</text>
+  <text x="220" y="216" text-anchor="middle" class="s">changes: almost never</text>
+  <rect x="460" y="20" width="400" height="210" rx="14" class="soft"/><text x="480" y="46" class="m" style="fill:var(--accent)">OracleAppStack · stacks/app_stack.py</text>
+  <text x="480" y="70" class="s">deployed on every merge, by the pipeline</text>
+  <rect x="480" y="86" width="170" height="40" rx="6" class="hi"/><text x="565" y="111" text-anchor="middle" class="m">VPC + subnets</text>
+  <rect x="670" y="86" width="170" height="40" rx="6" class="hi"/><text x="755" y="111" text-anchor="middle" class="m">RDS Postgres</text>
+  <rect x="480" y="136" width="170" height="40" rx="6" class="hi"/><text x="565" y="161" text-anchor="middle" class="m">2 roles for ECS</text>
+  <rect x="670" y="136" width="170" height="40" rx="6" class="hi"/><text x="755" y="161" text-anchor="middle" class="m">ECS service :image_tag</text>
+  <text x="660" y="216" text-anchor="middle" class="s">changes: the image tag, on every merge</text>
+</svg>
+    <figcaption><b>Figure 3.</b> The app stack refers to the repository by name. It does not need the base stack's outputs, only that the repository exists.</figcaption>
+  </figure>
+</section>
+
+<section id="oidc">
+  <h2><small>04</small>How GitHub gets into AWS without a password</h2>
+  <p>On Day 2 we pasted a private key into GitHub secrets. If it leaks, whoever has it can log in to the server until we notice. Today there is nothing to paste. GitHub signs a short statement about the running job, AWS checks the signature and the statement, and hands back credentials that expire in one hour.</p>
+  <figure><svg viewBox="0 0 880 300" role="img" aria-label="Sequence: the job asks GitHub for a token; GitHub returns a signed token saying repo talhaturab/mlops-training, branch main; the job sends it to AWS STS asking to assume the deploy role; STS checks the role's trust policy, which names that repo and branch; STS returns credentials valid for one hour; the job pushes to ECR and runs cdk deploy with them."><defs><marker id="o1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
+  <rect x="20" y="20" width="160" height="44" rx="8" class="box"/><text x="100" y="47" text-anchor="middle" class="m">Actions job</text>
+  <rect x="360" y="20" width="160" height="44" rx="8" class="soft"/><text x="440" y="47" text-anchor="middle" class="m">GitHub</text>
+  <rect x="700" y="20" width="160" height="44" rx="8" class="hi"/><text x="780" y="47" text-anchor="middle" class="m">AWS STS</text>
+  <path d="M100 64 L100 290" class="ln dash" style="stroke:var(--rule)"/><path d="M440 64 L440 290" class="ln dash" style="stroke:var(--rule)"/><path d="M780 64 L780 290" class="ln dash" style="stroke:var(--rule)"/>
+  <path d="M100 100 L438 100" class="ln" marker-end="url(#o1)"/><text x="270" y="92" text-anchor="middle" class="s">1. "a token for this job, please"</text>
+  <path d="M440 140 L102 140" class="ln a" marker-end="url(#o1)" style="color:var(--accent)"/><text x="290" y="132" text-anchor="middle" class="lab">2. a signed token: this repo, branch main</text>
+  <path d="M100 180 L778 180" class="ln" marker-end="url(#o1)"/><text x="440" y="172" text-anchor="middle" class="s">3. "here is my token; let me assume role oracle-github-deploy"</text>
+  <rect x="470" y="196" width="390" height="44" rx="6" class="warm"/><text x="665" y="214" text-anchor="middle" class="s">4. trust policy check: signed by GitHub? and</text><text x="665" y="230" text-anchor="middle" class="s">sub = repo:talhaturab/mlops-training:ref:refs/heads/main ?</text>
+  <path d="M780 270 L102 270" class="ln a" marker-end="url(#o1)" style="color:var(--accent)"/><text x="440" y="262" text-anchor="middle" class="lab">5. temporary credentials, valid for 1 hour</text>
+</svg>
+    <figcaption><b>Figure 4.</b> Step 4 is the whole security model. A job from another repository, or from a branch that is not main, gets a refusal at that step.</figcaption>
+  </figure>
+  <p>The condition lives in the base stack. These are the lines that matter:</p>
+  <pre>assumed_by=iam.WebIdentityPrincipal(
+    provider.oidc_provider_arn,
+    conditions={
+        "StringEquals": {"token.actions.githubusercontent.com:aud": "sts.amazonaws.com"},
+        "StringLike": {
+            "token.actions.githubusercontent.com:sub": "repo:talhaturab/mlops-training:ref:refs/heads/main"
+        },
+    },
+)</pre>
+  <div class="callout"><p><b>What the role may do.</b> Push to the one repository, and switch into the roles that <code>cdk bootstrap</code> created. CDK never deploys as the GitHub role directly. It hands the template to CloudFormation, which runs as a bootstrap role. So the GitHub role's own permissions stay short.</p></div>
+</section>
+
+<section id="pipeline">
+  <h2><small>05</small>The pipeline</h2>
+  <p>File: <code>.github/workflows/oracle-aws.yml</code>. Three jobs, same shape as Day 2. The test job is unchanged. The other two are new.</p>
+  <figure><svg viewBox="0 0 880 230" role="img" aria-label="Three jobs left to right. test: uv sync, ruff, pytest, about one minute. build-and-push: get AWS credentials, log in to ECR, build for amd64, push oracle:sha, about three minutes. deploy: get AWS credentials, install cdk, cdk diff, cdk deploy with the image tag, curl /health, about five minutes."><defs><marker id="p1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
+  <rect x="20" y="30" width="240" height="160" rx="12" class="box"/><text x="140" y="58" text-anchor="middle" font-weight="600">test</text>
+  <text x="40" y="86" class="s">uv sync --frozen</text><text x="40" y="106" class="s">ruff check</text><text x="40" y="126" class="s">pytest, 55 tests</text><text x="40" y="172" class="m" style="fill:var(--muted)">~1 min</text>
+  <path d="M260 110 L318 110" class="ln" marker-end="url(#p1)"/>
+  <rect x="320" y="30" width="240" height="160" rx="12" class="hi"/><text x="440" y="58" text-anchor="middle" font-weight="600">build-and-push</text>
+  <text x="340" y="86" class="s">get AWS credentials (OIDC)</text><text x="340" y="106" class="s">log in to ECR</text><text x="340" y="126" class="s">docker build, linux/amd64</text><text x="340" y="146" class="s">push oracle:&lt;sha&gt;</text><text x="340" y="172" class="m" style="fill:var(--muted)">~3 min, cached layers</text>
+  <path d="M560 110 L618 110" class="ln" marker-end="url(#p1)"/><text x="589" y="100" text-anchor="middle" class="lab">sha</text>
+  <rect x="620" y="30" width="240" height="160" rx="12" class="hi"/><text x="740" y="58" text-anchor="middle" font-weight="600">deploy</text>
+  <text x="640" y="86" class="s">get AWS credentials (OIDC)</text><text x="640" y="106" class="s">install cdk, uv sync</text><text x="640" y="126" class="s">cdk diff, then cdk deploy</text><text x="640" y="146" class="s">curl the new URL /health</text><text x="640" y="172" class="m" style="fill:var(--muted)">~8 min, first run ~20</text>
+  <text x="440" y="218" text-anchor="middle" class="s">the sha is the only thing passed between the last two jobs</text>
+</svg>
+    <figcaption><b>Figure 5.</b> The image tag is the commit sha. Any running service can be traced to the exact commit it was built from.</figcaption>
+  </figure>
+  <p>The deploy step, from the workflow file:</p>
+  <pre>- name: cdk deploy
+  run: >
+    cdk deploy OracleAppStack
+    -c image_tag=${{ needs.build-and-push.outputs.image_tag }}
+    --require-approval never
+    --outputs-file outputs.json</pre>
+  <ul>
+    <li><code>-c image_tag=…</code> sets a context value. The stack reads it and puts it in the ECS service definition.</li>
+    <li><code>--require-approval never</code>: a person is not there to press y. The diff step just before prints what will change, for the log.</li>
+    <li><code>--outputs-file</code> writes the stack outputs, including the service URL, so the last step can check the live site.</li>
+  </ul>
+</section>
+
+<section id="merge">
+  <h2><small>06</small>What happens on merge</h2>
+  <figure><svg viewBox="0 0 880 340" role="img" aria-label="Timeline after a merge: pipeline tests, builds and pushes the image, cdk diff shows only the image tag changed, CloudFormation starts updating the service, ECS starts the new image alongside the old one, checks /health and sends it a small share of traffic first, then moves all traffic and stops the old copy. Failure branch: if /health never passes or the new version returns errors, ECS keeps the old version, CloudFormation reports rollback, and the pipeline goes red while the site stays up on the old version."><defs><marker id="m1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
+  <path d="M60 40 L60 230" class="ln" style="stroke:var(--rule)"/>
+  <circle cx="60" cy="50" r="6" fill="var(--accent)"/><text x="80" y="46" class="m">0:00  merge to main</text><text x="80" y="64" class="s">test, build, push oracle:a7c21d0</text>
+  <circle cx="60" cy="100" r="6" fill="var(--accent)"/><text x="80" y="96" class="m">4:00  cdk diff</text><text x="80" y="114" class="s">[~] Service  ImageIdentifier: …/oracle:39081f6 → …/oracle:a7c21d0</text>
+  <circle cx="60" cy="150" r="6" fill="var(--accent)"/><text x="80" y="146" class="m">4:10  AWS::ECS::ExpressGatewayService  UPDATE_IN_PROGRESS</text><text x="80" y="164" class="s">ECS starts a7c21d0 next to 39081f6, checks /health, sends it a little traffic first</text>
+  <circle cx="60" cy="210" r="6" fill="var(--accent)"/><text x="80" y="206" class="m">8:30  UPDATE_COMPLETE</text><text x="80" y="224" class="s">all traffic moves to a7c21d0, the old copy stops, the pipeline curls /health and goes green</text>
+  <path d="M560 150 L720 150 L720 258" class="ln w dash" marker-end="url(#m1)" style="color:var(--warm)"/><text x="640" y="140" text-anchor="middle" class="lab w">if /health fails, or 5xx errors rise</text>
+  <rect x="60" y="260" width="800" height="70" rx="10" class="warm"/><text x="76" y="286" class="m">Service  UPDATE_FAILED   ·   stack  UPDATE_ROLLBACK_COMPLETE   ·   pipeline: red</text><text x="76" y="310" class="s">39081f6 kept serving the whole time. Nobody saw an error page. Fix the code, merge again.</text>
+</svg>
+    <figcaption><b>Figure 6.</b> This is a canary deployment: the new version earns traffic gradually, and a CloudWatch alarm on 5xx errors can undo it. The old version keeps running until the new one has proven itself. That is the difference from Day 2, where docker rm -f stopped the old container before the new one had started.</figcaption>
+  </figure>
+</section>
+
+<section id="network">
+  <h2><small>07</small>The database and the network</h2>
+  <p>A database needs a private network, and so do the containers. This is the smallest one that works, and the stack builds all of it in about twelve lines.</p>
+  <figure><svg viewBox="0 0 880 330" role="img" aria-label="A VPC spanning two availability zones. Each zone has a public subnet with a route to the internet, holding a load balancer node and a Fargate task, and an isolated subnet with no route out, holding the RDS instance in zone a. A browser reaches the load balancer on 443, the load balancer reaches the task on 8000, and the task reaches the database on 5432. A security group rule allows 5432 from the task's group only."><defs><marker id="n1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
+  <rect x="20" y="110" width="120" height="60" rx="10" class="box"/><text x="80" y="136" text-anchor="middle" class="m">browser</text><text x="80" y="156" text-anchor="middle" class="s">https :443</text>
+  <rect x="180" y="14" width="680" height="284" rx="14" class="soft" stroke-dasharray="6 5"/><text x="196" y="36" class="m" style="fill:var(--muted)">VPC  10.0.0.0/16</text>
+  <rect x="200" y="50" width="320" height="234" rx="10" class="soft"/><text x="216" y="70" class="m" style="fill:var(--muted)">zone eu-west-2a</text>
+  <rect x="540" y="50" width="300" height="234" rx="10" class="soft"/><text x="556" y="70" class="m" style="fill:var(--muted)">zone eu-west-2b</text>
+  <rect x="216" y="84" width="288" height="96" rx="8" class="box"/><text x="230" y="104" class="m">public subnet</text><text x="230" y="122" class="s">has a route to the internet</text>
+  <rect x="230" y="136" width="100" height="30" rx="5" class="hi"/><text x="280" y="156" text-anchor="middle" class="s">load balancer</text>
+  <rect x="390" y="136" width="110" height="30" rx="5" class="hi"/><text x="445" y="156" text-anchor="middle" class="s">Fargate task</text>
+  <path d="M330 151 L388 151" class="ln a" marker-end="url(#n1)" style="color:var(--accent)"/>
+  <rect x="216" y="196" width="288" height="78" rx="8" class="box"/><text x="230" y="216" class="m">isolated subnet</text><text x="230" y="234" class="s">no route out at all</text>
+  <rect x="390" y="238" width="110" height="30" rx="5" class="hi"/><text x="445" y="258" text-anchor="middle" class="s">RDS Postgres</text>
+  <rect x="556" y="84" width="268" height="96" rx="8" class="box"/><text x="570" y="104" class="m">public subnet</text>
+  <rect x="570" y="136" width="120" height="30" rx="5" class="hi"/><text x="630" y="156" text-anchor="middle" class="s">load balancer</text>
+  <rect x="700" y="136" width="110" height="30" rx="5" class="hi" stroke-dasharray="3 3"/><text x="755" y="156" text-anchor="middle" class="s">task, if scaled</text>
+  <rect x="556" y="196" width="268" height="78" rx="8" class="box"/><text x="570" y="216" class="m">isolated subnet</text><text x="570" y="234" class="s">RDS can move here if zone a fails</text>
+  <path d="M140 140 L228 151" class="ln a" marker-end="url(#n1)" style="color:var(--accent)"/>
+  <path d="M445 166 L445 236" class="ln a" marker-end="url(#n1)" style="color:var(--accent)"/><text x="457" y="206" class="lab">5432</text>
+  <text x="359" y="146" text-anchor="middle" class="lab">8000</text>
+  <text x="440" y="322" text-anchor="middle" class="s">security group on RDS: allow 5432 from the task's security group, and nothing else</text>
+</svg>
+    <figcaption><b>Figure 7.</b> Two zones because RDS and the load balancer each require at least two. Tasks sit in the public subnets with a public IP, so they can pull the image and call OpenRouter without a NAT gateway, which would cost about $35 a month. Their own security group still allows nothing in except from the load balancer.</figcaption>
+  </figure>
+  <dl class="words">
+    <div class="word"><dt>VPC</dt><dd>Your own private network inside AWS, with an address range you choose. Nothing in it is reachable from outside unless you add a route and a firewall rule.</dd></div>
+    <div class="word"><dt>subnet</dt><dd>A slice of the VPC in one availability zone. Public ones have a route to the internet gateway. Isolated ones have no route out.</dd></div>
+    <div class="word"><dt>security group</dt><dd>A firewall attached to a resource. The rule we add: port 5432, from the tasks' group. Rules can name other groups, so no IP addresses appear.</dd></div>
+    <div class="word"><dt>load balancer</dt><dd>The public front door. It holds the HTTPS certificate, checks /health on every task, and spreads requests across them. ECS creates and owns it; up to 25 Express services share one.</dd></div>
+  </dl>
+  <p>In the app, the store chooses Postgres when it has a database URL and stays in memory otherwise. Two tables: a counter and the leaderboard. Every copy of the app reads the same rows, and a redeploy no longer resets the numbers.</p>
+</section>
+
+<section id="secrets">
+  <h2><small>08</small>Where the secrets are</h2>
+  <p>Two secrets, two different origins, one delivery path. Neither appears in git, in the pipeline logs, in the template, or in the console.</p>
+  <figure><svg viewBox="0 0 880 260" role="img" aria-label="RDS generates the database password and stores it in Secrets Manager. You create the OpenRouter key secret once by hand. When ECS starts the container, the execution role reads both and sets DB_PASSWORD and OPENROUTER_API_KEY as environment variables. The app builds the database URL from DB_HOST, DB_PORT, DB_NAME, DB_USER and DB_PASSWORD."><defs><marker id="k1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
+  <rect x="20" y="30" width="190" height="60" rx="8" class="box"/><text x="115" y="54" text-anchor="middle" class="m">RDS</text><text x="115" y="74" text-anchor="middle" class="s">generates the password</text>
+  <rect x="20" y="150" width="190" height="60" rx="8" class="box"/><text x="115" y="170" text-anchor="middle" class="m">you, once</text><text x="115" y="187" text-anchor="middle" class="s">aws secretsmanager</text><text x="115" y="202" text-anchor="middle" class="s">create-secret</text>
+  <path d="M210 60 L238 80" class="ln" marker-end="url(#k1)"/><path d="M210 180 L238 160" class="ln" marker-end="url(#k1)"/>
+  <rect x="240" y="40" width="210" height="160" rx="10" class="hi"/><text x="345" y="66" text-anchor="middle" font-weight="600">Secrets Manager</text>
+  <rect x="256" y="82" width="178" height="44" rx="5" class="box"/><text x="345" y="100" text-anchor="middle" class="m">database credentials</text><text x="345" y="118" text-anchor="middle" class="s">{username, password, host…}</text>
+  <rect x="256" y="140" width="178" height="44" rx="5" class="box"/><text x="345" y="158" text-anchor="middle" class="m">oracle/openrouter</text><text x="345" y="176" text-anchor="middle" class="s">sk-or-…</text>
+  <path d="M450 120 L508 120" class="ln a" marker-end="url(#k1)" style="color:var(--accent)"/><text x="479" y="110" text-anchor="middle" class="lab">at start</text>
+  <rect x="510" y="40" width="350" height="160" rx="10" class="hi"/><text x="685" y="66" text-anchor="middle" font-weight="600">the container, on Fargate</text>
+  <text x="526" y="94" class="m">DB_HOST=…rds.amazonaws.com</text><text x="526" y="114" class="m">DB_PORT=5432 DB_NAME=oracle DB_USER=oracle</text>
+  <text x="526" y="140" class="m" style="fill:var(--warm)">DB_PASSWORD=</text><text x="630" y="140" class="s">secret 1, field "password"</text>
+  <text x="526" y="162" class="m" style="fill:var(--warm)">OPENROUTER_API_KEY=</text><text x="680" y="162" class="s">secret 2</text>
+  <text x="526" y="188" class="s">the app joins the DB_ values into one URL</text>
+  <text x="440" y="240" text-anchor="middle" class="s">the execution role has one extra permission: read these two secrets</text>
+</svg>
+    <figcaption><b>Figure 8.</b> The plain values (host, port, names) are ordinary environment variables and are visible in the console. The two secret ones are references, resolved by ECS when the container starts.</figcaption>
+  </figure>
+  <pre>secrets=[
+    ecs.CfnExpressGatewayService.SecretProperty(
+        name="DB_PASSWORD", value_from=f"{db.secret.secret_arn}:password::"
+    ),
+    ecs.CfnExpressGatewayService.SecretProperty(
+        name="OPENROUTER_API_KEY", value_from=openrouter.secret_arn
+    ),
+],</pre>
+  <p style="margin-top:14px"><code>:password::</code> after the ARN means "the password field of that JSON secret". The OpenRouter secret is a plain string, so its ARN is enough.</p>
+</section>
+
+<section id="setup">
+  <h2><small>09</small>One-time setup, in order</h2>
+  <p>Six steps from a laptop. After them, nobody runs a deploy by hand again.</p>
+  <ol class="steps">
+    <li><span class="ln-no">1</span><p><b>Sign in.</b> <code>aws sso login --profile talhasandbox</code>. Everything below uses this profile.</p></li>
+    <li><span class="ln-no">2</span><p><b>Bootstrap the account.</b> <code>npx aws-cdk bootstrap aws://824992912214/eu-west-2 --profile talhasandbox</code>. Creates the bucket and the cdk- roles. Once per account and region.</p></li>
+    <li><span class="ln-no">3</span><p><b>Deploy the base stack.</b> <code>npx aws-cdk deploy OracleBaseStack --profile talhasandbox</code> from <code>day04/infra</code>. It prints <code>DeployRoleArn</code>.</p></li>
+    <li><span class="ln-no">4</span><p><b>Tell GitHub the role.</b> <code>gh variable set AWS_DEPLOY_ROLE_ARN --body arn:aws:iam::824992912214:role/oracle-github-deploy</code>. A variable, not a secret: the ARN is not sensitive, and the trust policy is what protects it.</p></li>
+    <li><span class="ln-no">5</span><p><b>Store the OpenRouter key.</b> <code>aws secretsmanager create-secret --name oracle/openrouter --secret-string sk-or-… --region eu-west-2 --profile talhasandbox</code>.</p></li>
+    <li><span class="ln-no">6</span><p><b>Merge to main</b>, or run the <code>oracle-aws</code> workflow from the Actions tab. The first run creates the network, the database and the service and takes about twenty minutes: RDS, then the load balancer and its certificate.</p></li>
+  </ol>
+</section>
+
+<section id="rollback">
+  <h2><small>10</small>Going back to an earlier version</h2>
+  <p>Every image in ECR is tagged with its commit. Two ways to run an older one:</p>
+  <ul>
+    <li><b>Revert the commit and merge.</b> The pipeline builds and deploys the reverted code. Git history shows what happened and why. This is the normal way.</li>
+    <li><b>Re-run an older workflow run.</b> Open the run for the commit you want in the Actions tab and press "Re-run all jobs". It deploys that commit's tag again. Faster, and nothing in git records it.</li>
+  </ul>
+  <p>Either way it is a normal deploy: the old version keeps serving until the new one passes its health check.</p>
+</section>
+
+<section id="cost">
+  <h2><small>11</small>What it costs while it runs</h2>
+  <table>
+    <tr><th>Item</th><th>About</th><th>Note</th></tr>
+    <tr><td>RDS db.t3.micro, 20 GB</td><td>$15 / month</td><td>The largest line. Stop it when the course is not running.</td></tr>
+    <tr><td>Fargate task, 0.5 vCPU 1 GB</td><td>$23 / month</td><td>Billed per second while running. One task minimum.</td></tr>
+    <tr><td>Application Load Balancer</td><td>$18 / month</td><td>Plus a little per request. The certificate is free.</td></tr>
+    <tr><td>Secrets Manager, 2 secrets</td><td>$0.80 / month</td><td></td></tr>
+    <tr><td>ECR storage</td><td>$0.10 / GB / month</td><td>Each image is ~760 MB. Old tags add up; add a lifecycle rule later.</td></tr>
+    <tr><td>VPC, subnets, security groups, public IPs</td><td>$4 / month</td><td>A public IPv4 address costs $0.005 an hour; the task has one. No NAT gateways.</td></tr>
+    <tr><td>GitHub Actions</td><td>$0</td><td>Public repository.</td></tr>
+  </table>
+  <p><code>npx aws-cdk destroy OracleAppStack</code> removes every paid item above except the images.</p>
+</section>
+
+<section id="mistakes">
+  <h2><small>12</small>Mistakes to expect</h2>
+  <ul class="mistakes">
+    <li><b>"Not authorized to perform sts:AssumeRoleWithWebIdentity".</b> The trust condition did not match. Check the repository name in <code>cdk.json</code> and that the workflow ran on main, not on a branch.</li>
+    <li><b>"OIDC provider already exists".</b> An account can have one provider for GitHub. If someone made one before, import it with <code>OpenIdConnectProvider.from_open_id_connect_provider_arn</code> instead of creating it.</li>
+    <li><b>The first deploy fails on the service.</b> ECS cannot start an image that is not in ECR yet. The pipeline pushes before it deploys; a manual first deploy needs a pushed image with the tag you pass.</li>
+    <li><b>Secret not found: oracle/openrouter.</b> Step 5 was skipped, or done in another region. The stack refers to the secret by name and expects it in eu-west-2.</li>
+    <li><b>Two pipelines deploy the same merge.</b> The Day 2 workflow still runs on the same paths and still updates the EC2 server. Disable one when you no longer teach with it.</li>
+    <li><b>The app cannot reach the database.</b> Check the security group rule exists and that the service was given our task security group. ECS adds its own groups; ours is the one the database trusts.</li>
+    <li><b>Old AWS CLI.</b> Express Mode is new. If <code>aws ecs create-express-gateway-service</code> is "invalid choice", update the CLI. CDK does not need it; it talks to CloudFormation.</li>
+  </ul>
+</section>
+
+<section id="remember">
+  <p class="remember"><b>The one sentence to remember:</b> the pipeline pushes an image tagged with the commit, tells CloudFormation that tag, and CloudFormation and ECS do the deployment, with a one-hour token instead of a key and a rollback instead of an outage.</p>
+</section>
+
+</main>
+<script>
+  const root = document.documentElement;
+  const button = document.getElementById("theme");
+  const systemDark = window.matchMedia("(prefers-color-scheme: dark)");
+  function current() { return root.dataset.theme || (systemDark.matches ? "dark" : "light"); }
+  function label() { button.textContent = current() === "dark" ? "☀ light" : "☾ dark"; }
+  button.addEventListener("click", () => {
+    const next = current() === "dark" ? "light" : "dark";
+    root.dataset.theme = next;
+    try { localStorage.setItem("course-doc-theme", next); } catch (e) {}
+    label();
+  });
+  systemDark.addEventListener("change", label);
+  label();
+</script>
+</body>
+</html>

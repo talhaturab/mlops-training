@@ -27,7 +27,7 @@ hit the models directly, with a class leaderboard of predicted incomes.
 |---|---|
 | 1 | The Oracle: FastAPI, a LangGraph agent, served models, Docker, and a manual EC2 deploy |
 | 2 | CI/CD: GitHub Actions runs tests, builds and publishes the image, deploys over SSH |
-| 3 | Managed cloud: ECR and App Runner or ECS, throwing the server away |
+| 3 | Managed cloud: ECR and ECS Express Mode, throwing the server away |
 | 4 | Secrets and configuration: secret managers, IAM, environments |
 | 5 | Splitting services and persistence: agent vs model API, Postgres, Compose, 12-factor |
 | 6 | Model registry and artifact storage: MLflow, object storage, versions |

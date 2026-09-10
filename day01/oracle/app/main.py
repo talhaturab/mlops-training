@@ -10,7 +10,7 @@ from app.agent.tools import ORACLE_TOOLS, set_api_base_url
 from app.config import PROJECT_DIR, Settings, get_settings
 from app.ml.predict import LoadedModels
 from app.routers import chat, predict, stats
-from app.store import StatsStore
+from app.store import make_store
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -21,7 +21,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         # Everything the app needs at runtime is attached to app.state here, once.
         app.state.settings = settings
         app.state.models = LoadedModels(settings.artifacts_dir)
-        app.state.store = StatsStore()
+        app.state.store = make_store(settings.effective_database_url)
         set_api_base_url(settings.model_api_url)
         if settings.llm_configured:
             app.state.graph = build_graph(

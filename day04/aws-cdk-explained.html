@@ -1,0 +1,417 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>AWS CDK: infrastructure as code</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400;1,8..60,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    color-scheme: light;
+    --paper: #fbf8f1; --panel: #f3eee2; --card: #ffffff; --ink: #1d1a17; --muted: #6b645a; --rule: #ddd6c8;
+    --accent: #1f4e79; --accent-soft: #e4edf6; --warm: #b8562a; --warm-soft: #f6e6dc;
+    --code-bg: #1d1a17; --code-ink: #f1ebe0; --code-muted: #a39a88; --code-num: #6f675b;
+    --remember-bg: #1d1a17; --remember-ink: #fbf8f1; --remember-accent: #f3c988; --ghost: #c9c1b1;
+    --serif: "Source Serif 4", "Iowan Old Style", Charter, Georgia, serif;
+    --mono: "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --paper: #15131a; --panel: #1f1c25; --card: #1a1820; --ink: #ebe6dc; --muted: #a59d92; --rule: #383341;
+      --accent: #8fb6de; --accent-soft: #1e2a3a; --warm: #e5906a; --warm-soft: #3a2a23;
+      --code-bg: #0e0d12; --code-ink: #e9e3d8; --code-muted: #8f877c; --code-num: #5c5666;
+      --remember-bg: #ebe6dc; --remember-ink: #15131a; --remember-accent: #8a4d24; --ghost: #4a4552;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --paper: #15131a; --panel: #1f1c25; --card: #1a1820; --ink: #ebe6dc; --muted: #a59d92; --rule: #383341;
+    --accent: #8fb6de; --accent-soft: #1e2a3a; --warm: #e5906a; --warm-soft: #3a2a23;
+    --code-bg: #0e0d12; --code-ink: #e9e3d8; --code-muted: #8f877c; --code-num: #5c5666;
+    --remember-bg: #ebe6dc; --remember-ink: #15131a; --remember-accent: #8a4d24; --ghost: #4a4552;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--serif); font-size: 18px; line-height: 1.6; }
+  a { color: var(--accent); }
+
+  .mast { max-width: 880px; margin: 0 auto; padding: 56px 24px 20px; border-bottom: 2px solid var(--ink); }
+  .eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin: 0 0 14px; }
+  h1 { margin: 0 0 12px; font-size: clamp(38px, 6vw, 56px); line-height: 1.02; font-weight: 600; letter-spacing: -.015em; }
+  .sub { margin: 0; font-size: 21px; font-style: italic; color: var(--muted); max-width: 34ch; line-height: 1.4; }
+  .toc { max-width: 880px; margin: 0 auto; padding: 18px 24px 0; display: flex; flex-wrap: wrap; gap: 8px 22px; font-family: var(--mono); font-size: 12.5px; }
+  .toc a { color: var(--muted); text-decoration: none; border-bottom: 1px solid var(--rule); padding-bottom: 1px; }
+  .toc a:hover { color: var(--accent); border-color: var(--accent); }
+  .toc .theme { margin-left: auto; font: inherit; color: var(--muted); background: var(--card); border: 1px solid var(--rule); border-radius: 999px; padding: 4px 12px; cursor: pointer; }
+  .toc .theme:hover { color: var(--accent); border-color: var(--accent); }
+
+  main { max-width: 880px; margin: 0 auto; padding: 24px 24px 96px; }
+  section { padding: 44px 0 8px; border-top: 1px solid var(--rule); margin-top: 40px; }
+  section:first-of-type { border-top: 0; margin-top: 0; }
+  h2 { font-size: 30px; line-height: 1.15; font-weight: 600; margin: 0 0 18px; letter-spacing: -.01em; }
+  h2 small { display: block; font-family: var(--mono); font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); margin-bottom: 8px; font-weight: 500; }
+  h3 { font-size: 21px; margin: 26px 0 10px; }
+  p { margin: 0 0 18px; max-width: 68ch; }
+  ul { margin: 0 0 18px; padding-left: 22px; max-width: 68ch; } li { margin-bottom: 10px; }
+  li::marker { color: var(--accent); }
+  code { font-family: var(--mono); font-size: .86em; background: var(--panel); padding: 1px 6px; border-radius: 4px; }
+  .callout { background: var(--accent-soft); border-left: 4px solid var(--accent); color: var(--ink); padding: 16px 20px; margin: 24px 0; max-width: 72ch; border-radius: 0 8px 8px 0; }
+  .callout b { color: var(--accent); }
+  .callout p:last-child { margin: 0; }
+  .remember { background: var(--remember-bg); color: var(--remember-ink); padding: 28px 30px; border-radius: 12px; font-size: 24px; line-height: 1.35; font-style: italic; margin: 32px 0 0; }
+  .remember code { background: rgba(255,255,255,.14); color: inherit; }
+  .remember b { color: var(--remember-accent); font-style: normal; }
+
+  figure { margin: 26px 0 30px; }
+  figure svg { display: block; width: 100%; height: auto; max-width: 880px; }
+  figcaption { font-family: var(--mono); font-size: 12.5px; color: var(--muted); margin-top: 10px; line-height: 1.5; }
+  figcaption b { color: var(--ink); font-weight: 500; }
+  svg text { font-family: var(--serif); font-size: 15px; fill: var(--ink); }
+  svg .m { font-family: var(--mono); font-size: 12.5px; }
+  svg .s { font-size: 12.5px; fill: var(--muted); }
+  svg .box { fill: var(--card); stroke: var(--ink); stroke-width: 1.5; }
+  svg .soft { fill: var(--panel); stroke: var(--rule); stroke-width: 1.5; }
+  svg .hi { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.8; }
+  svg .warm { fill: var(--warm-soft); stroke: var(--warm); stroke-width: 1.8; }
+  svg .ln { stroke: var(--ink); stroke-width: 1.5; fill: none; }
+  svg .ln.a { stroke: var(--accent); stroke-width: 2; }
+  svg .ln.w { stroke: var(--warm); stroke-width: 2; }
+  svg .dash { stroke-dasharray: 5 5; }
+  svg .lab { font-family: var(--mono); font-size: 12px; fill: var(--accent); }
+  svg .lab.w { fill: var(--warm); }
+
+  .words { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 8px 0 18px; }
+  @media (max-width: 720px) { .words { grid-template-columns: 1fr; } }
+  .word { background: var(--card); border: 1px solid var(--rule); border-radius: 10px; padding: 16px 18px; }
+  .word dt { font-family: var(--mono); font-size: 15px; color: var(--accent); font-weight: 500; margin-bottom: 6px; }
+  .word dd { margin: 0; font-size: 16.5px; line-height: 1.5; }
+
+  pre, code, svg .m, svg .lab { font-variant-ligatures: none; }
+  pre { margin: 0; background: var(--code-bg); color: var(--code-ink); border: 1px solid var(--rule); font-family: var(--mono); font-size: 14px; line-height: 1.6; padding: 18px 20px; border-radius: 10px; white-space: pre; overflow-x: auto; }
+  pre .c { color: var(--code-muted); }
+  pre .n { display: inline-block; width: 26px; color: var(--code-num); user-select: none; }
+  pre .add { color: #8fd18f; } pre .del { color: #e89a8a; } pre .mod { color: #f3c988; }
+  .steps { list-style: none; padding: 0; margin: 22px 0 0; max-width: none; }
+  .steps li { display: grid; grid-template-columns: 54px 1fr; gap: 14px; padding: 14px 0; border-top: 1px solid var(--rule); margin: 0; align-items: start; }
+  .steps .ln-no { font-family: var(--mono); font-size: 13px; color: var(--accent); background: var(--accent-soft); border-radius: 6px; padding: 5px 0; text-align: center; margin-top: 2px; }
+  .steps p { margin: 0; max-width: none; }
+  .cmds { display: grid; grid-template-columns: 1fr; gap: 12px; margin: 8px 0 20px; }
+  .cmd { display: grid; grid-template-columns: 1fr 260px; gap: 18px; align-items: center; background: var(--card); border: 1px solid var(--rule); border-radius: 10px; padding: 12px 16px; }
+  .cmd pre { padding: 10px 14px; font-size: 13.5px; }
+  .cmd .why { font-size: 16px; line-height: 1.45; }
+  .cmd .why b { font-family: var(--mono); font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--accent); display: block; margin-bottom: 2px; }
+  @media (max-width: 720px) { .cmd { grid-template-columns: 1fr; } }
+  .mistakes { list-style: none; padding: 0; max-width: none; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 720px) { .mistakes { grid-template-columns: 1fr; } }
+  .mistakes li { background: var(--warm-soft); border-left: 4px solid var(--warm); border-radius: 0 8px 8px 0; padding: 12px 16px; margin: 0; font-size: 16.5px; line-height: 1.5; }
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 24px; font-size: 16.5px; }
+  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  th { font-family: var(--mono); font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+  td:first-child { font-weight: 600; width: 30%; }
+  @media print { .toc { display: none; } section { break-inside: avoid; } }
+</style>
+<script>
+  try {
+    const saved = localStorage.getItem("course-doc-theme");
+    if (saved === "dark" || saved === "light") document.documentElement.dataset.theme = saved;
+  } catch (e) {}
+</script>
+</head>
+<body>
+
+<header class="mast">
+  <p class="eyebrow">Day 4 · DevOps &amp; MLOps for ML engineers · handout</p>
+  <h1>AWS CDK: infrastructure as code</h1>
+  <p class="sub">Yesterday you clicked. Today you write the same thing down and let AWS do the clicking.</p>
+</header>
+<nav class="toc" aria-label="Sections">
+  <a href="#what">What it is</a><a href="#why">Why</a><a href="#words">Words</a><a href="#shape">Shape</a><a href="#project">Project</a>
+  <a href="#code">The code</a><a href="#commands">Commands</a><a href="#deploy">Deploy</a><a href="#change">Change</a><a href="#mistakes">Mistakes</a>
+  <button class="theme" id="theme" type="button" aria-label="Switch colour theme">theme</button>
+</nav>
+
+<main>
+
+<section id="what">
+  <h2><small>01</small>What CDK is</h2>
+  <p>CDK is a Python library and a command-line tool. You describe AWS resources in Python. The tool turns that into a CloudFormation template, and CloudFormation creates the resources. You never write the template by hand.</p>
+  <figure><svg viewBox="0 0 880 250" role="img" aria-label="Python code goes through cdk synth to become a CloudFormation template, then cdk deploy hands the template to CloudFormation, which creates the ECR repository, the ECS service and the IAM roles inside AWS."><defs><marker id="w1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
+  <rect x="20" y="80" width="130" height="90" rx="10" class="hi"/><text x="85" y="108" text-anchor="middle" font-weight="600">your code</text><text x="85" y="130" text-anchor="middle" class="m">oracle_stack.py</text><text x="85" y="150" text-anchor="middle" class="s">Python, in git</text>
+  <path d="M150 125 L238 125" class="ln a" marker-end="url(#w1)" style="color:var(--accent)"/><text x="195" y="114" text-anchor="middle" class="lab">cdk synth</text>
+  <rect x="240" y="80" width="130" height="90" rx="10" class="box"/><text x="305" y="108" text-anchor="middle" font-weight="600">template</text><text x="305" y="130" text-anchor="middle" class="m">template.json</text><text x="305" y="150" text-anchor="middle" class="s">generated, 300 lines</text>
+  <path d="M370 125 L458 125" class="ln a" marker-end="url(#w1)" style="color:var(--accent)"/><text x="415" y="114" text-anchor="middle" class="lab">cdk deploy</text>
+  <rect x="460" y="80" width="160" height="90" rx="10" class="box"/><text x="540" y="108" text-anchor="middle" font-weight="600">CloudFormation</text><text x="540" y="130" text-anchor="middle" class="s">an AWS service that</text><text x="540" y="148" text-anchor="middle" class="s">creates, updates, deletes</text>
+  <rect x="640" y="20" width="220" height="210" rx="14" class="soft" stroke-dasharray="6 5"/><text x="656" y="42" class="m" style="fill:var(--muted)">AWS, LONDON</text>
+  <rect x="660" y="60" width="180" height="40" rx="8" class="hi"/><text x="750" y="85" text-anchor="middle" class="m">ECR repository</text>
+  <rect x="660" y="110" width="180" height="40" rx="8" class="hi"/><text x="750" y="135" text-anchor="middle" class="m">ECS Express service</text>
+  <rect x="660" y="160" width="180" height="40" rx="8" class="hi"/><text x="750" y="185" text-anchor="middle" class="m">IAM roles</text>
+  <path d="M620 110 L658 80" class="ln" marker-end="url(#w1)"/><path d="M620 125 L658 130" class="ln" marker-end="url(#w1)"/><path d="M620 140 L658 180" class="ln" marker-end="url(#w1)"/>
+  <text x="85" y="212" text-anchor="middle" class="s">you write this</text><text x="450" y="212" text-anchor="middle" class="s">the tool and AWS do this</text><path d="M160 205 L340 205" class="ln dash" style="stroke:var(--rule)"/><path d="M560 205 L630 205" class="ln dash" style="stroke:var(--rule)"/>
+</svg>
+    <figcaption><b>Figure 1.</b> You own the left box. Everything to the right is generated or done by AWS. The three resources on the right are the ones you created by hand on Day 3.</figcaption>
+  </figure>
+</section>
+
+<section id="why">
+  <h2><small>02</small>Why not keep using the console</h2>
+  <p>The console works for one person doing something once. It fails for a team doing the same thing many times, because clicks leave no record.</p>
+  <figure><svg viewBox="0 0 880 310" role="img" aria-label="Left: Day 3 in the console was six screens of clicks, about 25 minutes, and the only record is your memory. Right: Day 4 with CDK is one file and one command, and the record is the file in git."><defs><marker id="y1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
+  <rect x="20" y="20" width="400" height="270" rx="14" class="soft"/><text x="40" y="46" class="m" style="fill:var(--muted)">DAY 3 · CONSOLE</text>
+  <rect x="40" y="62" width="360" height="26" rx="5" class="box"/><text x="52" y="80" class="m">1. ECR: Create repository</text>
+  <rect x="40" y="94" width="360" height="26" rx="5" class="box"/><text x="52" y="112" class="m">2. terminal: login, tag, push</text>
+  <rect x="40" y="126" width="360" height="26" rx="5" class="box"/><text x="52" y="144" class="m">3. IAM: create two roles for ECS</text>
+  <rect x="40" y="158" width="360" height="26" rx="5" class="box"/><text x="52" y="176" class="m">4. ECS: Create Express service, pick image</text>
+  <rect x="40" y="190" width="360" height="26" rx="5" class="box"/><text x="52" y="208" class="m">5. port 8000, CPU, memory, wait, check</text>
+  <rect x="40" y="232" width="360" height="40" rx="6" class="warm"/><text x="220" y="250" text-anchor="middle" class="m">record of what you did: none</text><text x="220" y="265" text-anchor="middle" class="s">to do it again, remember the clicks</text>
+  <rect x="460" y="20" width="400" height="270" rx="14" class="soft"/><text x="480" y="46" class="m" style="fill:var(--muted)">DAY 4 · CDK</text>
+  <rect x="480" y="62" width="360" height="90" rx="6" class="hi"/><text x="660" y="88" text-anchor="middle" class="m">oracle_stack.py</text><text x="660" y="110" text-anchor="middle" class="s">repository + two roles + service</text><text x="660" y="130" text-anchor="middle" class="s">about 35 lines</text>
+  <path d="M660 152 L660 178" class="ln a" marker-end="url(#y1)" style="color:var(--accent)"/>
+  <rect x="480" y="180" width="360" height="36" rx="6" class="box"/><text x="660" y="203" text-anchor="middle" class="m">cdk deploy</text>
+  <rect x="480" y="232" width="360" height="40" rx="6" class="hi"/><text x="660" y="250" text-anchor="middle" class="m">record of what you did: the file, in git</text><text x="660" y="265" text-anchor="middle" class="s">to do it again, run the command again</text>
+</svg>
+    <figcaption><b>Figure 2.</b> Same three resources. On the left the knowledge is in your head. On the right it is in a file that can be reviewed, copied and re-run.</figcaption>
+  </figure>
+  <table>
+    <tr><th>Question</th><th>Console</th><th>CDK</th></tr>
+    <tr><td>What exists right now?</td><td>Open each console page and look</td><td>Read the file</td></tr>
+    <tr><td>Build it again in a second account</td><td>Repeat every click</td><td><code>cdk deploy</code> with a different profile</td></tr>
+    <tr><td>Who changed the memory to 4 GB, and when?</td><td>Unknown</td><td>The git commit</td></tr>
+    <tr><td>Show me the change before it happens</td><td>Not possible</td><td><code>cdk diff</code></td></tr>
+    <tr><td>Remove everything</td><td>Delete each resource, in the right order</td><td><code>cdk destroy</code></td></tr>
+    <tr><td>Time to learn</td><td>Low</td><td>A few hours, once</td></tr>
+  </table>
+</section>
+
+<section id="words">
+  <h2><small>03</small>The words</h2>
+  <dl class="words">
+    <div class="word"><dt>CloudFormation</dt><dd>The AWS service that reads a template and creates the resources in it. It records what it created as a <b>stack</b> and can update or delete the whole stack later.</dd></div>
+    <div class="word"><dt>template</dt><dd>A JSON or YAML file listing resources and their settings. CDK generates it. You almost never read it, and you never edit it.</dd></div>
+    <div class="word"><dt>stack</dt><dd>One CloudFormation unit: a template plus the live resources it created. CDK: one Python class. Deploy, diff and destroy work on a whole stack.</dd></div>
+    <div class="word"><dt>construct</dt><dd>A Python class that stands for one or more AWS resources. <code>ecr.Repository</code> is a construct. A stack is made of constructs.</dd></div>
+    <div class="word"><dt>app</dt><dd>The program that holds your stacks. <code>app.py</code> creates an <code>App</code>, adds stacks to it, and calls <code>synth()</code>.</dd></div>
+    <div class="word"><dt>synth</dt><dd>Short for synthesize: run the Python and write the template to a folder called <code>cdk.out</code>. Nothing touches AWS.</dd></div>
+    <div class="word"><dt>bootstrap</dt><dd>A one-time setup per account and region. It creates an S3 bucket and a few IAM roles that <code>cdk deploy</code> needs.</dd></div>
+    <div class="word"><dt>asset</dt><dd>A local file CDK must upload before deploying, for example a Docker image or a Lambda zip. Assets go to the bootstrap bucket or ECR.</dd></div>
+  </dl>
+</section>
+
+<section id="shape">
+  <h2><small>04</small>How the code is organised</h2>
+  <p>Three levels of nesting: an app holds stacks, a stack holds constructs, a construct becomes one or more resources.</p>
+  <figure><svg viewBox="0 0 880 300" role="img" aria-label="An App box contains a Stack box named OracleStack, which contains three constructs: two Roles and a Service. On the right, the CloudFormation stack holds two IAM roles and one ECS Express service. Below it, a note says that ECS then creates the load balancer, certificate, log group and scaling itself; those are not in the stack."><defs><marker id="s1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
+  <rect x="20" y="20" width="480" height="210" rx="14" class="soft"/><text x="40" y="46" class="m" style="fill:var(--muted)">APP  ·  app.py</text>
+  <rect x="40" y="60" width="440" height="150" rx="10" class="box"/><text x="60" y="84" class="m">STACK  ·  OracleStack</text>
+  <rect x="60" y="100" width="130" height="90" rx="8" class="hi"/><text x="125" y="128" text-anchor="middle" font-weight="600">Role ×2</text><text x="125" y="150" text-anchor="middle" class="s">L2 constructs</text><text x="125" y="168" text-anchor="middle" class="m">iam.Role</text>
+  <rect x="210" y="100" width="250" height="90" rx="8" class="hi"/><text x="335" y="128" text-anchor="middle" font-weight="600">Service</text><text x="335" y="150" text-anchor="middle" class="s">L1 construct</text><text x="335" y="168" text-anchor="middle" class="m">ecs.CfnExpressGatewayService</text>
+  <path d="M500 145 L578 145" class="ln a" marker-end="url(#s1)" style="color:var(--accent)"/><text x="539" y="134" text-anchor="middle" class="lab">becomes</text>
+  <rect x="580" y="20" width="280" height="210" rx="14" class="soft" stroke-dasharray="6 5"/><text x="600" y="46" class="m" style="fill:var(--muted)">CLOUDFORMATION STACK</text>
+  <rect x="600" y="60" width="240" height="36" rx="6" class="box"/><text x="720" y="83" text-anchor="middle" class="m">AWS::IAM::Role</text>
+  <rect x="600" y="106" width="240" height="36" rx="6" class="box"/><text x="720" y="129" text-anchor="middle" class="m">AWS::IAM::Role</text>
+  <rect x="600" y="152" width="240" height="36" rx="6" class="box"/><text x="720" y="175" text-anchor="middle" class="m" style="font-size:11px">AWS::ECS::ExpressGatewayService</text>
+  <text x="720" y="214" text-anchor="middle" class="s">3 resources in the template</text>
+  <rect x="580" y="240" width="280" height="56" rx="8" class="warm"/><text x="720" y="257" text-anchor="middle" class="s">then ECS itself builds the load balancer,</text><text x="720" y="272" text-anchor="middle" class="s">certificate, log group, scaling and alarm.</text><text x="720" y="287" text-anchor="middle" class="s">None of those are in the stack.</text>
+</svg>
+    <figcaption><b>Figure 3.</b> Three constructs, three resources. The Role constructs are L2 and fill in the trust policy for you. The Service is L1: every property is yours to write, and CloudFormation hands the rest to ECS.</figcaption>
+  </figure>
+
+  <h3>Constructs come in three levels</h3>
+  <figure><svg viewBox="0 0 880 230" role="img" aria-label="Three stacked bars. L1 at the bottom: exact CloudFormation properties, names start with Cfn. L2 in the middle: one resource with sensible defaults, this is what we use. L3 at the top: several resources wired together as a pattern. Going up, more decisions are made for you and you write less code."><defs><marker id="l1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
+  <rect x="120" y="20" width="620" height="54" rx="8" class="soft"/><text x="140" y="42" class="m">L3 · patterns</text><text x="140" y="62" class="s">several resources already wired together, e.g. ApplicationLoadBalancedFargateService (Day 7)</text>
+  <rect x="120" y="86" width="620" height="54" rx="8" class="hi"/><text x="140" y="108" class="m">L2 · one resource, good defaults</text><text x="140" y="128" class="s">ecr.Repository, iam.Role, rds.DatabaseInstance. Most of what we write.</text>
+  <rect x="120" y="152" width="620" height="54" rx="8" class="soft"/><text x="140" y="174" class="m">L1 · raw CloudFormation</text><text x="140" y="194" class="s">CfnRepository, CfnExpressGatewayService. Every property spelled out. Use when no L2 exists yet.</text>
+  <path d="M60 200 L60 30" class="ln a" marker-end="url(#l1)" style="color:var(--accent)"/><text x="30" y="118" text-anchor="middle" class="lab" transform="rotate(-90 30 118)">less code you write</text>
+  <path d="M820 30 L820 200" class="ln w" marker-end="url(#l1)" style="color:var(--warm)"/><text x="850" y="118" text-anchor="middle" class="lab w" transform="rotate(90 850 118)">more control</text>
+</svg>
+    <figcaption><b>Figure 4.</b> Every L2 construct is built on an L1. ECS Express Mode is new, so today it only has an L1, <code>CfnExpressGatewayService</code>. You can tell an L1 by the <code>Cfn</code> prefix.</figcaption>
+  </figure>
+</section>
+
+<section id="project">
+  <h2><small>05</small>A CDK project</h2>
+  <p>The tool needs Node.js, because the CDK command line is written in JavaScript. The code you write is Python.</p>
+  <div class="cmds">
+    <div class="cmd"><pre>npm install -g aws-cdk
+cdk --version</pre><div class="why"><b>once per laptop</b>Installs the <code>cdk</code> command.</div></div>
+    <div class="cmd"><pre>mkdir oracle-infra &amp;&amp; cd oracle-infra
+cdk init app --language python</pre><div class="why"><b>once per project</b>Creates the files below, a virtual environment, and a git repository.</div></div>
+    <div class="cmd"><pre>source .venv/bin/activate
+pip install -r requirements.txt</pre><div class="why"><b>once per project</b>Installs <code>aws-cdk-lib</code>, one package with every AWS service in it.</div></div>
+  </div>
+  <pre>oracle-infra/
+├── app.py                  <span class="c">← creates the App, adds the stack, calls synth()</span>
+├── cdk.json                <span class="c">← tells the cdk command how to run app.py</span>
+├── requirements.txt
+├── oracle_infra/
+│   └── oracle_infra_stack.py   <span class="c">← the stack: all the resources, in one class</span>
+├── tests/
+└── cdk.out/                <span class="c">← generated templates, do not commit</span></pre>
+  <p style="margin-top:18px">Two files matter: <code>app.py</code>, which you rarely touch, and the stack file, where all the work happens.</p>
+</section>
+
+<section id="code">
+  <h2><small>06</small>The service, as code</h2>
+  <p>This is a whole stack file. It runs the Oracle image from ECR on ECS Express Mode, which is Fargate plus a load balancer plus an HTTPS URL, and prints the URL.</p>
+  <pre><span class="n"> 1</span>from aws_cdk import CfnOutput, Stack
+<span class="n"> 2</span>from aws_cdk import aws_ecr as ecr, aws_ecs as ecs, aws_iam as iam
+<span class="n"> 3</span>from constructs import Construct
+<span class="n"> 4</span>
+<span class="n"> 5</span>
+<span class="n"> 6</span>class OracleInfraStack(Stack):
+<span class="n"> 7</span>    def __init__(self, scope: Construct, id: str, **kwargs) -> None:
+<span class="n"> 8</span>        super().__init__(scope, id, **kwargs)
+<span class="n"> 9</span>
+<span class="n">10</span>        repo = ecr.Repository.from_repository_name(self, "Repo", "oracle-&lt;yourname&gt;")
+<span class="n">11</span>
+<span class="n">12</span>        execution_role = iam.Role(
+<span class="n">13</span>            self, "ExecutionRole",
+<span class="n">14</span>            assumed_by=iam.ServicePrincipal("ecs-tasks.amazonaws.com"),
+<span class="n">15</span>            managed_policies=[iam.ManagedPolicy.from_aws_managed_policy_name(
+<span class="n">16</span>                "service-role/AmazonECSTaskExecutionRolePolicy")],
+<span class="n">17</span>        )
+<span class="n">18</span>        infra_role = iam.Role(
+<span class="n">19</span>            self, "InfrastructureRole",
+<span class="n">20</span>            assumed_by=iam.ServicePrincipal("ecs.amazonaws.com"),
+<span class="n">21</span>            managed_policies=[iam.ManagedPolicy.from_aws_managed_policy_name(
+<span class="n">22</span>                "service-role/AmazonECSInfrastructureRoleforExpressGatewayServices")],
+<span class="n">23</span>        )
+<span class="n">24</span>
+<span class="n">25</span>        service = ecs.CfnExpressGatewayService(
+<span class="n">26</span>            self, "Service",
+<span class="n">27</span>            service_name="oracle-&lt;yourname&gt;",
+<span class="n">28</span>            execution_role_arn=execution_role.role_arn,
+<span class="n">29</span>            infrastructure_role_arn=infra_role.role_arn,
+<span class="n">30</span>            cpu="512", memory="1024",
+<span class="n">31</span>            health_check_path="/health",
+<span class="n">32</span>            primary_container=ecs.CfnExpressGatewayService.ExpressGatewayContainerProperty(
+<span class="n">33</span>                image=f"{repo.repository_uri}:latest", container_port=8000,
+<span class="n">34</span>            ),
+<span class="n">35</span>        )
+<span class="n">36</span>
+<span class="n">37</span>        CfnOutput(self, "Url", value=service.attr_endpoint)</pre>
+  <ol class="steps">
+    <li><span class="ln-no">1–3</span><p>Imports. <code>Stack</code> and <code>CfnOutput</code> are core. Each AWS service has its own module inside <code>aws_cdk</code>: here ECR, ECS and IAM.</p></li>
+    <li><span class="ln-no">6–8</span><p>A stack is a class. <code>scope</code> is the app it belongs to, <code>id</code> is its name. Every construct takes these same two arguments first.</p></li>
+    <li><span class="ln-no">10</span><p><b>Refers to</b> the repository you made on Day 3 instead of creating a new one. ECS needs an image to exist when the service is created, and that repository already has one.</p></li>
+    <li><span class="ln-no">12–23</span><p>Two roles ECS needs. The <b>execution role</b> is what ECS uses to start a container: pull the image, write logs. The <b>infrastructure role</b> is what ECS Express uses to build the load balancer, the certificate and the scaling around it. Each gets an AWS-written policy; you only say who may use the role.</p></li>
+    <li><span class="ln-no">25–35</span><p>The service. <code>Cfn</code> at the front means L1: every property has the same name as in the CloudFormation docs, and nothing is filled in for you. Image, port, size, health check path. No network is given, so ECS uses the account's default VPC; the real Day 4 stack gives its own.</p></li>
+    <li><span class="ln-no">37</span><p>An output is a value CloudFormation prints after deploy. Here it is the HTTPS URL that ECS gives the service, so you do not have to look for it in the console.</p></li>
+  </ol>
+  <div class="callout"><p><b>What you did not write.</b> The cluster, the task definition, the load balancer and its listener, the HTTPS certificate, the security groups, the log group, auto scaling and the rollback alarm. ECS Express creates all of them from this one resource at deploy time. They are real resources in your account, but they are not in the template. Run <code>cdk synth</code> and look: the template has three resources.</p></div>
+</section>
+
+<section id="commands">
+  <h2><small>07</small>The five commands</h2>
+  <figure><svg viewBox="0 0 880 200" role="img" aria-label="Five commands in order: bootstrap once per account, then synth, diff, deploy in a loop, and destroy at the end. Synth and diff do not change AWS. Deploy and destroy do."><defs><marker id="c1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
+  <rect x="20" y="60" width="130" height="60" rx="10" class="soft"/><text x="85" y="86" text-anchor="middle" class="m">cdk bootstrap</text><text x="85" y="106" text-anchor="middle" class="s">once per account</text>
+  <path d="M150 90 L198 90" class="ln" marker-end="url(#c1)"/>
+  <rect x="200" y="60" width="130" height="60" rx="10" class="box"/><text x="265" y="86" text-anchor="middle" class="m">cdk synth</text><text x="265" y="106" text-anchor="middle" class="s">write template</text>
+  <path d="M330 90 L378 90" class="ln" marker-end="url(#c1)"/>
+  <rect x="380" y="60" width="130" height="60" rx="10" class="box"/><text x="445" y="86" text-anchor="middle" class="m">cdk diff</text><text x="445" y="106" text-anchor="middle" class="s">show the change</text>
+  <path d="M510 90 L558 90" class="ln" marker-end="url(#c1)"/>
+  <rect x="560" y="60" width="130" height="60" rx="10" class="hi"/><text x="625" y="86" text-anchor="middle" class="m">cdk deploy</text><text x="625" y="106" text-anchor="middle" class="s">apply it</text>
+  <path d="M690 90 L738 90" class="ln" marker-end="url(#c1)"/>
+  <rect x="740" y="60" width="120" height="60" rx="10" class="warm"/><text x="800" y="86" text-anchor="middle" class="m">cdk destroy</text><text x="800" y="106" text-anchor="middle" class="s">remove it all</text>
+  <path d="M625 120 L625 150 L265 150 L265 122" class="ln a" marker-end="url(#c1)" style="color:var(--accent)"/><text x="445" y="168" text-anchor="middle" class="lab">edit the code, go round again</text>
+  <path d="M190 40 L520 40" class="ln dash" style="stroke:var(--rule)"/><text x="355" y="30" text-anchor="middle" class="s">these two touch nothing in AWS</text>
+  <path d="M550 40 L870 40" class="ln dash" style="stroke:var(--warm)"/><text x="710" y="30" text-anchor="middle" class="s">these two change AWS</text>
+</svg>
+    <figcaption><b>Figure 5.</b> Synth and diff are safe to run at any time. Deploy and destroy ask for confirmation when IAM or security settings change.</figcaption>
+  </figure>
+  <div class="cmds">
+    <div class="cmd"><pre>cdk bootstrap aws://824992912214/eu-west-2 \
+  --profile talhasandbox</pre><div class="why"><b>once</b>Creates the bucket and roles CDK needs in this account and region. Fails if your SSO session has expired.</div></div>
+    <div class="cmd"><pre>cdk synth</pre><div class="why"><b>check it runs</b>Runs <code>app.py</code>, writes <code>cdk.out/OracleInfraStack.template.json</code>, prints it.</div></div>
+    <div class="cmd"><pre>cdk diff --profile talhasandbox</pre><div class="why"><b>before every deploy</b>Compares the template with what is live. Lists every add, change and delete.</div></div>
+    <div class="cmd"><pre>cdk deploy --profile talhasandbox</pre><div class="why"><b>apply</b>Uploads the template, waits for CloudFormation, prints the outputs. First run takes about 10 minutes: most of it is ECS building the load balancer and its certificate.</div></div>
+    <div class="cmd"><pre>cdk destroy --profile talhasandbox</pre><div class="why"><b>clean up</b>Deletes every resource the stack created, in reverse order. The imported ECR repository is not deleted.</div></div>
+  </div>
+</section>
+
+<section id="deploy">
+  <h2><small>08</small>What happens during deploy</h2>
+  <p>CloudFormation works out the order from the dependencies in the template, creates resources one by one, and reports each step as an event. If any step fails, it undoes the ones before it.</p>
+  <figure><svg viewBox="0 0 880 350" role="img" aria-label="Timeline of stack events during a deploy: the stack starts, the two IAM roles are created, then the ECS Express service, which takes about ten minutes while ECS builds the load balancer and certificate and starts the task, then the stack completes and prints the URL. A branch shows that if the health check fails, CloudFormation rolls back and deletes the roles again, leaving nothing behind."><defs><marker id="d1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
+  <path d="M60 40 L60 230" class="ln" style="stroke:var(--rule)"/>
+  <circle cx="60" cy="50" r="6" fill="var(--accent)"/><text x="80" y="46" class="m">0:00  OracleInfraStack  CREATE_IN_PROGRESS</text><text x="80" y="64" class="s">CloudFormation reads the template</text>
+  <circle cx="60" cy="100" r="6" fill="var(--accent)"/><text x="80" y="96" class="m">0:05  AWS::IAM::Role ×2  CREATE_COMPLETE</text><text x="80" y="114" class="s">nothing depends on the roles, so they go first, in parallel</text>
+  <circle cx="60" cy="150" r="6" fill="var(--accent)"/><text x="80" y="146" class="m">0:10  AWS::ECS::ExpressGatewayService  CREATE_IN_PROGRESS</text><text x="80" y="164" class="s">ECS builds the load balancer, gets a certificate, pulls the image, starts it, checks /health</text>
+  <circle cx="60" cy="210" r="6" fill="var(--accent)"/><text x="80" y="206" class="m">10:30  OracleInfraStack  CREATE_COMPLETE</text><text x="80" y="224" class="s">outputs printed:  Url = https://oracle-talha.ecs.eu-west-2.on.aws</text>
+  <path d="M560 150 L720 150 L720 258" class="ln w dash" marker-end="url(#d1)" style="color:var(--warm)"/><text x="640" y="140" text-anchor="middle" class="lab w">if the health check fails</text>
+  <rect x="60" y="260" width="800" height="80" rx="10" class="warm"/><text x="76" y="286" class="m">0:14  AWS::ECS::ExpressGatewayService  CREATE_FAILED   ·   0:16  AWS::IAM::Role ×2  DELETE_COMPLETE</text><text x="76" y="308" class="m">0:17  OracleInfraStack  ROLLBACK_COMPLETE</text><text x="76" y="328" class="s">nothing is left half-made. Read the failure reason, fix the code, deploy again.</text>
+</svg>
+    <figcaption><b>Figure 6.</b> The same events appear in the terminal and on the CloudFormation console page under the stack's Events tab. The failure reason is in that list.</figcaption>
+  </figure>
+</section>
+
+<section id="change">
+  <h2><small>09</small>Changing something</h2>
+  <p>To change the service, change the code and deploy again. CloudFormation compares the new template with the old one and touches only what differs.</p>
+  <figure><svg viewBox="0 0 880 170" role="img" aria-label="Edit the code to set memory to 2048, run cdk diff which shows one changed property, run cdk deploy which updates only the service."><defs><marker id="g1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
+  <rect x="20" y="30" width="240" height="110" rx="10" class="hi"/><text x="140" y="56" text-anchor="middle" font-weight="600">1. edit</text><text x="140" y="82" text-anchor="middle" class="m">memory="1024"</text><text x="140" y="100" text-anchor="middle" class="m">becomes memory="2048"</text><text x="140" y="124" text-anchor="middle" class="s">one value changed in Service</text>
+  <path d="M260 85 L318 85" class="ln a" marker-end="url(#g1)" style="color:var(--accent)"/>
+  <rect x="320" y="30" width="240" height="110" rx="10" class="box"/><text x="440" y="56" text-anchor="middle" font-weight="600">2. cdk diff</text><text x="440" y="82" text-anchor="middle" class="m">[~] Service</text><text x="440" y="100" text-anchor="middle" class="m">Memory: 1024 → 2048</text><text x="440" y="124" text-anchor="middle" class="s">1 change, 0 adds, 0 deletes</text>
+  <path d="M560 85 L618 85" class="ln a" marker-end="url(#g1)" style="color:var(--accent)"/>
+  <rect x="620" y="30" width="240" height="110" rx="10" class="hi"/><text x="740" y="56" text-anchor="middle" font-weight="600">3. cdk deploy</text><text x="740" y="82" text-anchor="middle" class="m">UPDATE_IN_PROGRESS</text><text x="740" y="100" text-anchor="middle" class="m">UPDATE_COMPLETE</text><text x="740" y="124" text-anchor="middle" class="s">roles untouched, service updated</text>
+</svg>
+    <figcaption><b>Figure 7.</b> Diff before deploy. It is the only way to know whether a change is an update in place or a delete and recreate.</figcaption>
+  </figure>
+  <p>The diff output uses three markers:</p>
+  <pre><span class="add">[+]</span> something will be created
+<span class="del">[-]</span> something will be deleted
+<span class="mod">[~]</span> something will be changed in place</pre>
+  <div class="callout"><p><b>Some changes replace the resource.</b> Renaming a repository or changing a database engine cannot be done in place, so CloudFormation creates a new one and deletes the old one. The diff says <code>requires replacement</code> when this will happen. Read for it before you press y.</p></div>
+</section>
+
+<section id="bootstrap">
+  <h2><small>10</small>What bootstrap made</h2>
+  <p>Deploy needs somewhere to upload the template and a role to act as. Bootstrap creates those once. You will see them in the console as a stack called <code>CDKToolkit</code>.</p>
+  <figure><svg viewBox="0 0 880 200" role="img" aria-label="Inside the account and region, bootstrap created an S3 bucket for templates and assets and a set of IAM roles. cdk deploy from the laptop uploads to the bucket and asks CloudFormation to use the deploy role."><defs><marker id="b1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
+  <rect x="20" y="70" width="130" height="60" rx="10" class="box"/><text x="85" y="96" text-anchor="middle" class="m">laptop</text><text x="85" y="116" text-anchor="middle" class="s">cdk deploy</text>
+  <rect x="220" y="20" width="640" height="160" rx="14" class="soft" stroke-dasharray="6 5"/><text x="240" y="44" class="m" style="fill:var(--muted)">ACCOUNT 824992912214 · EU-WEST-2 · stack "CDKToolkit"</text>
+  <rect x="250" y="66" width="270" height="90" rx="10" class="hi"/><text x="385" y="92" text-anchor="middle" font-weight="600">S3 bucket</text><text x="385" y="114" text-anchor="middle" class="s">templates and assets are uploaded here</text><text x="385" y="134" text-anchor="middle" class="m">cdk-hnb659fds-assets-...</text>
+  <rect x="560" y="66" width="270" height="90" rx="10" class="hi"/><text x="695" y="92" text-anchor="middle" font-weight="600">IAM roles</text><text x="695" y="114" text-anchor="middle" class="s">deploy, file publishing, lookup</text><text x="695" y="134" text-anchor="middle" class="s">CloudFormation acts as the deploy role</text>
+  <path d="M150 90 L248 90" class="ln a" marker-end="url(#b1)" style="color:var(--accent)"/><text x="199" y="80" text-anchor="middle" class="lab">upload</text>
+  <path d="M150 115 L248 135" class="ln" marker-end="url(#b1)"/>
+</svg>
+    <figcaption><b>Figure 8.</b> Bootstrap runs once. If deploy says "This stack uses assets, so the toolkit stack must be deployed", it has not been run in this account and region.</figcaption>
+  </figure>
+</section>
+
+<section id="mistakes">
+  <h2><small>11</small>Mistakes to expect</h2>
+  <ul class="mistakes">
+    <li><b>Editing in the console after deploying with CDK.</b> The next deploy puts it back to what the code says. Change the code instead.</li>
+    <li><b>Expired SSO session.</b> <code>cdk deploy</code> fails with a token error. Run <code>aws sso login --profile talhasandbox</code> and try again.</li>
+    <li><b>Wrong region.</b> The stack goes to the region in your profile or in <code>app.py</code>. Check the CloudFormation console in London, not the default region.</li>
+    <li><b>Creating the ECR repository and the service in one stack, with no image pushed yet.</b> ECS cannot start the task, the health check never passes, and the whole stack rolls back. Push the image first, or import the repository as in the example.</li>
+    <li><b>Committing <code>cdk.out</code>.</b> It is generated. Add it to <code>.gitignore</code>; <code>cdk init</code> already does this.</li>
+    <li><b>Reading a "not authorized" error as a CDK bug.</b> It is IAM. The identity you deploy with, or the role CloudFormation uses, is missing a permission. Bootstrap needs permission to create S3 buckets and IAM roles.</li>
+  </ul>
+</section>
+
+<section id="remember">
+  <p class="remember"><b>The one sentence to remember:</b> CDK turns Python into a CloudFormation template, CloudFormation turns the template into resources, and the code in git is the record of what exists.</p>
+</section>
+
+</main>
+<script>
+  const root = document.documentElement;
+  const button = document.getElementById("theme");
+  const systemDark = window.matchMedia("(prefers-color-scheme: dark)");
+  function current() { return root.dataset.theme || (systemDark.matches ? "dark" : "light"); }
+  function label() { button.textContent = current() === "dark" ? "☀ light" : "☾ dark"; }
+  button.addEventListener("click", () => {
+    const next = current() === "dark" ? "light" : "dark";
+    root.dataset.theme = next;
+    try { localStorage.setItem("course-doc-theme", next); } catch (e) {}
+    label();
+  });
+  systemDark.addEventListener("change", label);
+  label();
+</script>
+</body>
+</html>

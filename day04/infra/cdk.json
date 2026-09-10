@@ -1,0 +1,7 @@
+{
+  "app": "uv run python app.py",
+  "context": {
+    "github_repo": "talhaturab/mlops-training",
+    "image_tag": "latest"
+  }
+}

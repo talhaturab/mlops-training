@@ -5,3 +5,4 @@ def test_health_reports_status_and_llm_not_configured(client):
     assert body["status"] == "ok"
     assert body["llm_configured"] is False
     assert "models_loaded" in body
+    assert body["store"] == "memory"

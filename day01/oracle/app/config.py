@@ -27,9 +27,30 @@ class Settings(BaseSettings):
     llm_max_attempts: int = 3
     artifacts_dir: Path = PROJECT_DIR / "artifacts"
 
+    # Database. Either give DATABASE_URL directly, or the parts (this is what ECS
+    # gets on Day 4: host and port from the stack, password from Secrets Manager).
+    # With neither, the app keeps its counters in memory, as on Day 1.
+    database_url: str | None = None
+    db_host: str | None = None
+    db_port: int = 5432
+    db_name: str = "oracle"
+    db_user: str = "oracle"
+    db_password: str | None = None
+
     @property
     def llm_configured(self) -> bool:
         return bool(self.openrouter_api_key)
+
+    @property
+    def effective_database_url(self) -> str | None:
+        if self.database_url:
+            return self.database_url
+        if self.db_host and self.db_password:
+            return (
+                f"postgresql://{self.db_user}:{self.db_password}"
+                f"@{self.db_host}:{self.db_port}/{self.db_name}"
+            )
+        return None
 
 
 @lru_cache

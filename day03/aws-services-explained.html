@@ -140,7 +140,7 @@
   <p class="sub">One picture and a few sentences per service.</p>
 </header>
 <nav class="toc" aria-label="Sections">
-  <a href="#map">How they fit</a><a href="#iam">IAM</a><a href="#ec2">EC2</a><a href="#ecr">ECR</a><a href="#apprunner">App Runner</a>
+  <a href="#map">How they fit</a><a href="#iam">IAM</a><a href="#ec2">EC2</a><a href="#ecr">ECR</a><a href="#ecs">ECS</a>
   <a href="#logs">CloudWatch</a><a href="#secrets">Secrets Manager</a><a href="#s3">S3</a><a href="#rds">RDS</a>
   <button class="theme" id="theme" type="button" aria-label="Switch colour theme">theme</button>
 </nav>
@@ -150,7 +150,7 @@
 <section id="map">
   <h2><small>01</small>How they fit around the Oracle</h2>
   <p>AWS is a catalogue of separate services. Each does one job and has its own console page, its own prices, and its own permissions. We use eight of them over the course. This is where each one sits.</p>
-  <figure><svg viewBox="0 0 880 300" role="img" aria-label="Overview: a laptop pushes code to GitHub, whose pipeline pushes an image to ECR. App Runner runs the image and serves browsers over HTTPS. The app reads a secret from Secrets Manager, model files from S3, rows from RDS, and writes logs to CloudWatch. IAM decides every one of these calls."><defs><marker id="o1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
+  <figure><svg viewBox="0 0 880 300" role="img" aria-label="Overview: a laptop pushes code to GitHub, whose pipeline pushes an image to ECR. An ECS Express service runs the image and serves browsers over HTTPS. The app reads a secret from Secrets Manager, model files from S3, rows from RDS, and writes logs to CloudWatch. IAM decides every one of these calls."><defs><marker id="o1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
   <rect x="20" y="110" width="90" height="46" rx="8" class="box"/><text x="65" y="138" text-anchor="middle" class="m">laptop</text>
   <path d="M110 133 L158 133" class="ln" marker-end="url(#o1)"/><text x="134" y="124" text-anchor="middle" class="s">git push</text>
   <rect x="160" y="110" width="110" height="46" rx="8" class="soft"/><text x="215" y="130" text-anchor="middle" class="m">GitHub</text><text x="215" y="146" text-anchor="middle" class="s">pipeline</text>
@@ -158,7 +158,7 @@
   <text x="316" y="36" class="m" style="fill:var(--muted)">AWS, LONDON REGION</text>
   <rect x="330" y="110" width="90" height="46" rx="8" class="hi"/><text x="375" y="138" text-anchor="middle" class="m">ECR</text>
   <path d="M270 133 L328 133" class="ln a" marker-end="url(#o1)" style="color:var(--accent)"/><text x="299" y="124" text-anchor="middle" class="lab">image</text>
-  <rect x="460" y="96" width="150" height="74" rx="10" class="hi"/><text x="535" y="120" text-anchor="middle" font-weight="600">App Runner</text><text x="535" y="140" text-anchor="middle" class="s">runs the Oracle</text><text x="535" y="156" text-anchor="middle" class="s">HTTPS</text>
+  <rect x="460" y="96" width="150" height="74" rx="10" class="hi"/><text x="535" y="120" text-anchor="middle" font-weight="600">ECS</text><text x="535" y="140" text-anchor="middle" class="s">runs the Oracle</text><text x="535" y="156" text-anchor="middle" class="s">load balancer, HTTPS</text>
   <path d="M420 133 L458 133" class="ln a" marker-end="url(#o1)" style="color:var(--accent)"/>
   <rect x="770" y="110" width="80" height="46" rx="8" class="box"/><text x="810" y="138" text-anchor="middle" class="m">browser</text>
   <path d="M770 133 L612 133" class="ln a" marker-end="url(#o1)" style="color:var(--accent)"/><text x="691" y="124" text-anchor="middle" class="lab">https</text>
@@ -168,7 +168,7 @@
   <rect x="720" y="200" width="120" height="46" rx="8" class="soft"/><text x="780" y="220" text-anchor="middle" class="m">CloudWatch</text><text x="780" y="236" text-anchor="middle" class="s">logs</text>
   <path d="M500 170 L400 198" class="ln" marker-end="url(#o1)"/><path d="M525 170 L515 198" class="ln" marker-end="url(#o1)"/><path d="M560 170 L630 198" class="ln" marker-end="url(#o1)"/><path d="M600 170 L760 198" class="ln" marker-end="url(#o1)"/>
   <rect x="330" y="50" width="520" height="30" rx="6" class="warm"/><text x="590" y="70" text-anchor="middle" class="m">IAM: every arrow inside this box is a request that IAM allows or denies</text>
-  <text x="590" y="272" text-anchor="middle" class="s">Day 3: ECR, App Runner, CloudWatch  ·  Day 4: Secrets Manager, IAM  ·  Day 5: RDS  ·  Day 6: S3</text>
+  <text x="590" y="272" text-anchor="middle" class="s">Day 3: ECR, ECS, CloudWatch  ·  Day 4: Secrets Manager, IAM, RDS  ·  Day 9: S3</text>
 </svg>
     <figcaption><b>Figure 1.</b> Code goes in on the left, users come in on the right. Everything inside the dashed box is AWS, and every call inside it is checked by IAM.</figcaption>
   </figure>
@@ -211,7 +211,7 @@
 
     <div class="card" id="ecr">
       <h3>ECR</h3><p class="what">A place to store container images inside AWS.</p>
-      <svg viewBox="0 0 400 150" role="img" aria-label="ECR stores versions of an image in a repository. A laptop or pipeline pushes; a server or App Runner pulls."><defs><marker id="r1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
+      <svg viewBox="0 0 400 150" role="img" aria-label="ECR stores versions of an image in a repository. A laptop or pipeline pushes; a server or ECS pulls."><defs><marker id="r1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
   <rect x="10" y="50" width="80" height="44" rx="8" class="box"/><text x="50" y="69" text-anchor="middle" class="m">laptop or</text><text x="50" y="84" text-anchor="middle" class="m">pipeline</text>
   <path d="M90 72 L138 72" class="ln a" marker-end="url(#r1)" style="color:var(--accent)"/><text x="114" y="64" text-anchor="middle" class="lab">push</text>
   <rect x="140" y="14" width="150" height="122" rx="10" class="hi"/><text x="215" y="36" text-anchor="middle" font-weight="600">ECR repository</text>
@@ -221,26 +221,26 @@
   <path d="M290 72 L338 72" class="ln a" marker-end="url(#r1)" style="color:var(--accent)"/><text x="314" y="64" text-anchor="middle" class="lab">pull</text>
   <rect x="340" y="50" width="52" height="44" rx="8" class="box"/><text x="366" y="69" text-anchor="middle" class="m">what</text><text x="366" y="84" text-anchor="middle" class="m">runs it</text>
 </svg>
-      <p>A <b>repository</b> holds the versions of one image, each with a tag. You push to it from a laptop or a pipeline; servers and App Runner pull from it.</p><p>Same idea as GitHub Container Registry. The difference is that access is decided by IAM, so AWS services can pull without a password.</p>
+      <p>A <b>repository</b> holds the versions of one image, each with a tag. You push to it from a laptop or a pipeline; servers and ECS pull from it.</p><p>Same idea as GitHub Container Registry. The difference is that access is decided by IAM, so AWS services can pull without a password.</p>
       <p class="day">Day 3</p>
     </div>
 
-    <div class="card" id="apprunner">
-      <h3>App Runner</h3><p class="what">Runs a container image as a website, no server to manage.</p>
-      <svg viewBox="0 0 400 150" role="img" aria-label="App Runner takes an image and a port and runs copies of it behind a load balancer with HTTPS. Browsers reach a URL it provides."><defs><marker id="a1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
+    <div class="card" id="ecs">
+      <h3>ECS</h3><p class="what">Runs a container image as a website, no server to manage.</p>
+      <svg viewBox="0 0 400 150" role="img" aria-label="ECS Express Mode takes an image and a port and runs copies of it, called tasks, on Fargate behind a load balancer with HTTPS. Browsers reach a URL it provides."><defs><marker id="a1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
   <rect x="10" y="56" width="70" height="38" rx="8" class="soft"/><text x="45" y="72" text-anchor="middle" class="m">image</text><text x="45" y="86" text-anchor="middle" class="m">+ port</text>
   <path d="M80 75 L118 75" class="ln a" marker-end="url(#a1)" style="color:var(--accent)"/>
-  <rect x="120" y="14" width="180" height="122" rx="10" class="hi"/><text x="210" y="34" text-anchor="middle" font-weight="600">App Runner</text>
+  <rect x="120" y="14" width="180" height="122" rx="10" class="hi"/><text x="210" y="34" text-anchor="middle" font-weight="600">ECS Express service</text>
   <rect x="136" y="44" width="148" height="24" rx="5" class="box"/><text x="210" y="60" text-anchor="middle" class="m">load balancer + HTTPS</text>
-  <rect x="136" y="78" width="44" height="30" rx="5" class="box"/><text x="158" y="97" text-anchor="middle" class="m">copy</text>
-  <rect x="188" y="78" width="44" height="30" rx="5" class="box" stroke-dasharray="3 3"/><text x="210" y="97" text-anchor="middle" class="m">copy</text>
-  <rect x="240" y="78" width="44" height="30" rx="5" class="box" stroke-dasharray="3 3"/><text x="262" y="97" text-anchor="middle" class="m">copy</text>
-  <text x="210" y="126" text-anchor="middle" class="s">more copies when busy, fewer when idle</text>
+  <rect x="136" y="78" width="44" height="30" rx="5" class="box"/><text x="158" y="97" text-anchor="middle" class="m">task</text>
+  <rect x="188" y="78" width="44" height="30" rx="5" class="box" stroke-dasharray="3 3"/><text x="210" y="97" text-anchor="middle" class="m">task</text>
+  <rect x="240" y="78" width="44" height="30" rx="5" class="box" stroke-dasharray="3 3"/><text x="262" y="97" text-anchor="middle" class="m">task</text>
+  <text x="210" y="126" text-anchor="middle" class="s">more tasks when busy, fewer when idle</text>
   <rect x="330" y="56" width="60" height="38" rx="8" class="box"/><text x="360" y="79" text-anchor="middle" class="m">browser</text>
   <path d="M330 68 L302 60" class="ln a" marker-end="url(#a1)" style="color:var(--accent)"/><text x="345" y="44" text-anchor="end" class="lab">https URL</text>
 </svg>
-      <p>You give it an image and a port. It starts copies of the container, puts a load balancer in front, issues an HTTPS certificate, and gives you a URL. When a new image appears in ECR, it deploys it after a health check.</p><p>You cannot log in to the machine, because you are not given one.</p>
-      <p class="day">Day 3</p>
+      <p>ECS runs containers. <b>Fargate</b> means AWS supplies the machines. A <b>task</b> is one running copy of the container. <b>Express Mode</b> is a one-page form: you give it an image and a port, and it builds the load balancer, the HTTPS certificate, the log group and the scaling rules, and gives you a URL.</p><p>You cannot log in to the machine, because you are not given one.</p>
+      <p class="day">Day 3 · Day 7 in depth</p>
     </div>
 
     <div class="card" id="logs">

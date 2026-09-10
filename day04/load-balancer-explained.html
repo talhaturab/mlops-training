@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>The load balancer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400;1,8..60,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    color-scheme: light;
+    --paper: #fbf8f1; --panel: #f3eee2; --card: #ffffff; --ink: #1d1a17; --muted: #6b645a; --rule: #ddd6c8;
+    --accent: #1f4e79; --accent-soft: #e4edf6; --warm: #b8562a; --warm-soft: #f6e6dc;
+    --code-bg: #1d1a17; --code-ink: #f1ebe0; --code-muted: #a39a88; --code-num: #6f675b;
+    --remember-bg: #1d1a17; --remember-ink: #fbf8f1; --remember-accent: #f3c988; --ghost: #c9c1b1;
+    --serif: "Source Serif 4", "Iowan Old Style", Charter, Georgia, serif;
+    --mono: "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --paper: #15131a; --panel: #1f1c25; --card: #1a1820; --ink: #ebe6dc; --muted: #a59d92; --rule: #383341;
+      --accent: #8fb6de; --accent-soft: #1e2a3a; --warm: #e5906a; --warm-soft: #3a2a23;
+      --code-bg: #0e0d12; --code-ink: #e9e3d8; --code-muted: #8f877c; --code-num: #5c5666;
+      --remember-bg: #ebe6dc; --remember-ink: #15131a; --remember-accent: #8a4d24; --ghost: #4a4552;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --paper: #15131a; --panel: #1f1c25; --card: #1a1820; --ink: #ebe6dc; --muted: #a59d92; --rule: #383341;
+    --accent: #8fb6de; --accent-soft: #1e2a3a; --warm: #e5906a; --warm-soft: #3a2a23;
+    --code-bg: #0e0d12; --code-ink: #e9e3d8; --code-muted: #8f877c; --code-num: #5c5666;
+    --remember-bg: #ebe6dc; --remember-ink: #15131a; --remember-accent: #8a4d24; --ghost: #4a4552;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--serif); font-size: 18px; line-height: 1.6; }
+  a { color: var(--accent); }
+
+  .mast { max-width: 880px; margin: 0 auto; padding: 56px 24px 20px; border-bottom: 2px solid var(--ink); }
+  .eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin: 0 0 14px; }
+  h1 { margin: 0 0 12px; font-size: clamp(38px, 6vw, 56px); line-height: 1.02; font-weight: 600; letter-spacing: -.015em; }
+  .sub { margin: 0; font-size: 21px; font-style: italic; color: var(--muted); max-width: 34ch; line-height: 1.4; }
+  .toc { max-width: 880px; margin: 0 auto; padding: 18px 24px 0; display: flex; flex-wrap: wrap; gap: 8px 22px; font-family: var(--mono); font-size: 12.5px; }
+  .toc a { color: var(--muted); text-decoration: none; border-bottom: 1px solid var(--rule); padding-bottom: 1px; }
+  .toc a:hover { color: var(--accent); border-color: var(--accent); }
+  .toc .theme { margin-left: auto; font: inherit; color: var(--muted); background: var(--card); border: 1px solid var(--rule); border-radius: 999px; padding: 4px 12px; cursor: pointer; }
+  .toc .theme:hover { color: var(--accent); border-color: var(--accent); }
+
+  main { max-width: 880px; margin: 0 auto; padding: 24px 24px 96px; }
+  section { padding: 44px 0 8px; border-top: 1px solid var(--rule); margin-top: 40px; }
+  section:first-of-type { border-top: 0; margin-top: 0; }
+  h2 { font-size: 30px; line-height: 1.15; font-weight: 600; margin: 0 0 18px; letter-spacing: -.01em; }
+  h2 small { display: block; font-family: var(--mono); font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); margin-bottom: 8px; font-weight: 500; }
+  h3 { font-size: 21px; margin: 26px 0 10px; }
+  p { margin: 0 0 18px; max-width: 68ch; }
+  ul { margin: 0 0 18px; padding-left: 22px; max-width: 68ch; } li { margin-bottom: 10px; }
+  li::marker { color: var(--accent); }
+  code { font-family: var(--mono); font-size: .86em; background: var(--panel); padding: 1px 6px; border-radius: 4px; }
+  .callout { background: var(--accent-soft); border-left: 4px solid var(--accent); color: var(--ink); padding: 16px 20px; margin: 24px 0; max-width: 72ch; border-radius: 0 8px 8px 0; }
+  .callout b { color: var(--accent); }
+  .callout p:last-child { margin: 0; }
+  .remember { background: var(--remember-bg); color: var(--remember-ink); padding: 28px 30px; border-radius: 12px; font-size: 24px; line-height: 1.35; font-style: italic; margin: 32px 0 0; }
+  .remember code { background: rgba(255,255,255,.14); color: inherit; }
+  .remember b { color: var(--remember-accent); font-style: normal; }
+
+  figure { margin: 26px 0 30px; }
+  figure svg { display: block; width: 100%; height: auto; max-width: 880px; }
+  figcaption { font-family: var(--mono); font-size: 12.5px; color: var(--muted); margin-top: 10px; line-height: 1.5; }
+  figcaption b { color: var(--ink); font-weight: 500; }
+  svg text { font-family: var(--serif); font-size: 15px; fill: var(--ink); }
+  svg .m { font-family: var(--mono); font-size: 12.5px; }
+  svg .s { font-size: 12.5px; fill: var(--muted); }
+  svg .box { fill: var(--card); stroke: var(--ink); stroke-width: 1.5; }
+  svg .soft { fill: var(--panel); stroke: var(--rule); stroke-width: 1.5; }
+  svg .hi { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.8; }
+  svg .warm { fill: var(--warm-soft); stroke: var(--warm); stroke-width: 1.8; }
+  svg .ln { stroke: var(--ink); stroke-width: 1.5; fill: none; }
+  svg .ln.a { stroke: var(--accent); stroke-width: 2; }
+  svg .ln.w { stroke: var(--warm); stroke-width: 2; }
+  svg .dash { stroke-dasharray: 5 5; }
+  svg .lab { font-family: var(--mono); font-size: 12px; fill: var(--accent); }
+  svg .lab.w { fill: var(--warm); }
+
+  .words { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 8px 0 18px; }
+  @media (max-width: 720px) { .words { grid-template-columns: 1fr; } }
+  .word { background: var(--card); border: 1px solid var(--rule); border-radius: 10px; padding: 16px 18px; }
+  .word dt { font-family: var(--mono); font-size: 15px; color: var(--accent); font-weight: 500; margin-bottom: 6px; }
+  .word dd { margin: 0; font-size: 16.5px; line-height: 1.5; }
+
+  pre, code, svg .m, svg .lab { font-variant-ligatures: none; }
+  pre { margin: 0; background: var(--code-bg); color: var(--code-ink); border: 1px solid var(--rule); font-family: var(--mono); font-size: 14px; line-height: 1.6; padding: 18px 20px; border-radius: 10px; white-space: pre; overflow-x: auto; }
+  pre .c { color: var(--code-muted); }
+  pre .n { display: inline-block; width: 26px; color: var(--code-num); user-select: none; }
+  pre .add { color: #8fd18f; } pre .del { color: #e89a8a; } pre .mod { color: #f3c988; }
+  .steps { list-style: none; padding: 0; margin: 22px 0 0; max-width: none; }
+  .steps li { display: grid; grid-template-columns: 54px 1fr; gap: 14px; padding: 14px 0; border-top: 1px solid var(--rule); margin: 0; align-items: start; }
+  .steps .ln-no { font-family: var(--mono); font-size: 13px; color: var(--accent); background: var(--accent-soft); border-radius: 6px; padding: 5px 0; text-align: center; margin-top: 2px; }
+  .steps p { margin: 0; max-width: none; }
+  .cmds { display: grid; grid-template-columns: 1fr; gap: 12px; margin: 8px 0 20px; }
+  .cmd { display: grid; grid-template-columns: 1fr 260px; gap: 18px; align-items: center; background: var(--card); border: 1px solid var(--rule); border-radius: 10px; padding: 12px 16px; }
+  .cmd pre { padding: 10px 14px; font-size: 13.5px; }
+  .cmd .why { font-size: 16px; line-height: 1.45; }
+  .cmd .why b { font-family: var(--mono); font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--accent); display: block; margin-bottom: 2px; }
+  @media (max-width: 720px) { .cmd { grid-template-columns: 1fr; } }
+  .mistakes { list-style: none; padding: 0; max-width: none; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 720px) { .mistakes { grid-template-columns: 1fr; } }
+  .mistakes li { background: var(--warm-soft); border-left: 4px solid var(--warm); border-radius: 0 8px 8px 0; padding: 12px 16px; margin: 0; font-size: 16.5px; line-height: 1.5; }
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 24px; font-size: 16.5px; }
+  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  th { font-family: var(--mono); font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+  td:first-child { font-weight: 600; width: 30%; }
+  table.menu { font-size: 15px; } table.menu td:first-child { width: 15%; } table.menu td { padding: 8px 8px; }
+  @media print { .toc { display: none; } section { break-inside: avoid; } }
+</style>
+<script>
+  try {
+    const saved = localStorage.getItem("course-doc-theme");
+    if (saved === "dark" || saved === "light") document.documentElement.dataset.theme = saved;
+  } catch (e) {}
+</script>
+</head>
+<body>
+
+<header class="mast">
+  <p class="eyebrow">Day 4 · DevOps &amp; MLOps for ML engineers · handout</p>
+  <h1>The load balancer</h1>
+  <p class="sub">One fixed address in front of things that keep changing.</p>
+</header>
+<nav class="toc" aria-label="Sections">
+  <a href="#what">What it is</a><a href="#why">Why you need one</a><a href="#ecs">Why ECS needs one</a><a href="#words">The words</a>
+  <button class="theme" id="theme" type="button" aria-label="Switch colour theme">theme</button>
+</nav>
+
+<main>
+
+<section id="what">
+  <h2><small>01</small>What it is</h2>
+  <p>A load balancer is a machine that AWS runs for you. It has one fixed address. Browsers send requests to that address, and it passes each request on to one of your running copies, then returns the answer. The copies behind it can come and go; the address in front does not change.</p>
+  <figure><svg viewBox="0 0 880 230" role="img" aria-label="Three browsers send requests to one load balancer address. The load balancer forwards them to two running tasks, one request each in turn, and returns the answers."><defs><marker id="a1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
+  <rect x="20" y="30" width="110" height="40" rx="8" class="box"/><text x="75" y="55" text-anchor="middle" class="m">browser</text>
+  <rect x="20" y="95" width="110" height="40" rx="8" class="box"/><text x="75" y="120" text-anchor="middle" class="m">browser</text>
+  <rect x="20" y="160" width="110" height="40" rx="8" class="box"/><text x="75" y="185" text-anchor="middle" class="m">browser</text>
+  <path d="M130 50 L288 105" class="ln a" marker-end="url(#a1)" style="color:var(--accent)"/><path d="M130 115 L288 115" class="ln a" marker-end="url(#a1)" style="color:var(--accent)"/><path d="M130 180 L288 125" class="ln a" marker-end="url(#a1)" style="color:var(--accent)"/>
+  <text x="210" y="98" text-anchor="middle" class="lab">https</text>
+  <rect x="290" y="70" width="220" height="90" rx="10" class="hi"/><text x="400" y="98" text-anchor="middle" font-weight="600">load balancer</text><text x="400" y="120" text-anchor="middle" class="s">one address, never changes</text><text x="400" y="140" text-anchor="middle" class="m">oracle.ecs.eu-west-2.on.aws</text>
+  <path d="M510 100 L648 70" class="ln" marker-end="url(#a1)"/><path d="M510 130 L648 160" class="ln" marker-end="url(#a1)"/>
+  <text x="580" y="70" text-anchor="middle" class="s">request 1, 3</text><text x="580" y="162" text-anchor="middle" class="s">request 2</text>
+  <rect x="650" y="40" width="200" height="56" rx="8" class="box"/><text x="750" y="62" text-anchor="middle" class="m">task A</text><text x="750" y="82" text-anchor="middle" class="s">10.0.1.17 : 8000</text>
+  <rect x="650" y="134" width="200" height="56" rx="8" class="box"/><text x="750" y="156" text-anchor="middle" class="m">task B</text><text x="750" y="176" text-anchor="middle" class="s">10.0.2.44 : 8000</text>
+  <text x="440" y="218" text-anchor="middle" class="s">nobody outside ever learns the tasks' addresses; they only know the one in the middle</text>
+</svg>
+    <figcaption><b>Figure 1.</b> Requests are shared out across the copies, which is where the name comes from. The sharing is the least important thing it does for us.</figcaption>
+  </figure>
+</section>
+
+<section id="why">
+  <h2><small>02</small>Why you need one, even with one copy</h2>
+  <p>On Day 1 the browser talked straight to the container: <code>http://18.168.202.250:8000</code>. That address was the machine's. It worked because there was one machine and it never changed. Three things break as soon as that stops being true.</p>
+  <figure><svg viewBox="0 0 880 250" role="img" aria-label="Three problems side by side. Addresses change: a task restarts and gets a new IP, so a bookmarked address goes dead. No HTTPS: a container speaks plain HTTP and has no certificate. Dead copies: with no one checking, a request can be sent to a crashed copy. Under each, the load balancer's answer: one stable DNS name, certificate held at the load balancer, health checks that stop traffic to a failing copy."><defs><marker id="b1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
+  <rect x="20" y="20" width="270" height="210" rx="12" class="soft"/><text x="155" y="46" text-anchor="middle" font-weight="600">addresses change</text>
+  <rect x="30" y="62" width="250" height="30" rx="5" class="warm"/><text x="155" y="82" text-anchor="middle" class="s">restart: 10.0.1.17 becomes 10.0.2.9</text>
+  <text x="155" y="116" text-anchor="middle" class="s">every crash, deploy or scale-up</text><text x="155" y="134" text-anchor="middle" class="s">gives a task a new address</text>
+  <rect x="30" y="152" width="250" height="56" rx="5" class="hi"/><text x="155" y="174" text-anchor="middle" class="s">load balancer: one DNS name that</text><text x="155" y="192" text-anchor="middle" class="s">stays put while the tasks change</text>
+  <rect x="305" y="20" width="270" height="210" rx="12" class="soft"/><text x="440" y="46" text-anchor="middle" font-weight="600">no HTTPS</text>
+  <rect x="315" y="62" width="250" height="30" rx="5" class="warm"/><text x="440" y="82" text-anchor="middle" class="s">uvicorn speaks plain HTTP on 8000</text>
+  <text x="440" y="116" text-anchor="middle" class="s">a certificate belongs to a name,</text><text x="440" y="134" text-anchor="middle" class="s">not to a container that may die tonight</text>
+  <rect x="315" y="152" width="250" height="56" rx="5" class="hi"/><text x="440" y="174" text-anchor="middle" class="s">load balancer: holds the certificate,</text><text x="440" y="192" text-anchor="middle" class="s">ends HTTPS, sends HTTP to the task</text>
+  <rect x="590" y="20" width="270" height="210" rx="12" class="soft"/><text x="725" y="46" text-anchor="middle" font-weight="600">dead copies</text>
+  <rect x="600" y="62" width="250" height="30" rx="5" class="warm"/><text x="725" y="82" text-anchor="middle" class="s">a copy has crashed; who knows?</text>
+  <text x="725" y="116" text-anchor="middle" class="s">without a check, requests keep</text><text x="725" y="134" text-anchor="middle" class="s">going to it and fail</text>
+  <rect x="600" y="152" width="250" height="56" rx="5" class="hi"/><text x="725" y="174" text-anchor="middle" class="s">load balancer: calls /health every 30 s,</text><text x="725" y="192" text-anchor="middle" class="s">stops sending to a failing copy</text>
+</svg>
+    <figcaption><b>Figure 2.</b> Even with a single task, the load balancer is what gives the Oracle a permanent address, HTTPS, and a check that it is alive.</figcaption>
+  </figure>
+</section>
+
+<section id="ecs">
+  <h2><small>03</small>Why ECS needs one</h2>
+  <p>ECS starts and stops tasks all the time: a crash, a deploy, scaling up at nine in the morning. Every new task has a new address. Something has to be told about each one, and told to forget the old ones. That something is the load balancer, and ECS does the telling.</p>
+  <figure><svg viewBox="0 0 880 300" role="img" aria-label="During a deployment: the load balancer's target group lists task A and task B, both v7. ECS starts task C, v8, waits for it to pass the health check, then registers it in the target group. ECS then tells the load balancer to drain task A, waits for in-flight requests to finish, removes it and stops it. The browser never notices."><defs><marker id="c1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
+  <rect x="20" y="40" width="130" height="50" rx="8" class="box"/><text x="85" y="70" text-anchor="middle" class="m">browser</text>
+  <path d="M150 65 L208 65" class="ln a" marker-end="url(#c1)" style="color:var(--accent)"/>
+  <rect x="210" y="20" width="220" height="260" rx="12" class="hi"/><text x="320" y="46" text-anchor="middle" font-weight="600">load balancer</text><text x="320" y="66" text-anchor="middle" class="s">target group: who is alive</text>
+  <rect x="230" y="84" width="180" height="34" rx="5" class="box"/><text x="320" y="106" text-anchor="middle" class="m">task A · v7 · healthy</text>
+  <rect x="230" y="128" width="180" height="34" rx="5" class="box"/><text x="320" y="150" text-anchor="middle" class="m">task B · v7 · healthy</text>
+  <rect x="230" y="172" width="180" height="34" rx="5" class="box" stroke-dasharray="4 3"/><text x="320" y="194" text-anchor="middle" class="m">task C · v8 · checking…</text>
+  <rect x="230" y="216" width="180" height="34" rx="5" class="warm"/><text x="320" y="238" text-anchor="middle" class="m">task A · draining</text>
+  <text x="320" y="270" text-anchor="middle" class="s">the list ECS keeps up to date</text>
+  <rect x="480" y="20" width="380" height="260" rx="12" class="soft"/><text x="670" y="46" text-anchor="middle" font-weight="600">ECS, during a deploy to v8</text>
+  <text x="500" y="80" class="m">1.</text><text x="522" y="80" class="s">start task C from the v8 task definition</text>
+  <text x="500" y="106" class="m">2.</text><text x="522" y="106" class="s">register C's address in the target group</text>
+  <text x="500" y="132" class="m">3.</text><text x="522" y="132" class="s">wait until /health on C passes; only then</text><text x="522" y="150" class="s">does the load balancer send it traffic</text>
+  <text x="500" y="176" class="m">4.</text><text x="522" y="176" class="s">tell the load balancer to drain A: no new</text><text x="522" y="194" class="s">requests, finish the ones in flight</text>
+  <text x="500" y="220" class="m">5.</text><text x="522" y="220" class="s">remove A from the group, stop A</text>
+  <text x="500" y="246" class="m">6.</text><text x="522" y="246" class="s">repeat for B</text>
+  <text x="670" y="272" text-anchor="middle" class="s">the browser keeps talking to the same address throughout</text>
+  <path d="M480 150 L432 150" class="ln dash" marker-end="url(#c1)"/><path d="M480 220 L432 220" class="ln dash" marker-end="url(#c1)"/>
+</svg>
+    <figcaption><b>Figure 3.</b> Without the load balancer, ECS could still replace tasks, but nobody would know where the new ones were. With it, replacement is invisible from outside. This is what "zero-downtime deployment" means in practice.</figcaption>
+  </figure>
+  <p>In Express Mode ECS creates the load balancer for you and keeps this list itself. On Day 7, when we build the service without Express Mode, the target group and listener become things we write down in CDK.</p>
+</section>
+
+<section id="words">
+  <h2><small>04</small>The words</h2>
+  <dl class="words">
+    <div class="word"><dt>Application Load Balancer</dt><dd>The kind we use. It understands HTTP: paths, headers, cookies. AWS also sells a Network Load Balancer, which works at the TCP level and is for things that are not HTTP.</dd></div>
+    <div class="word"><dt>listener</dt><dd>What the load balancer listens on: a port and a protocol. Ours is HTTPS on 443, with the certificate attached. A listener has rules that say which target group gets the request.</dd></div>
+    <div class="word"><dt>target group</dt><dd>The list of addresses that may receive traffic, with a health check attached. ECS adds and removes tasks from it. "Target" is the word for one entry: for us, one task's IP and port 8000.</dd></div>
+    <div class="word"><dt>health check</dt><dd>The load balancer asks each target <code>GET /health</code> on an interval. A target that fails a few in a row stops getting traffic; ECS then replaces it. A new target gets no traffic until it passes.</dd></div>
+    <div class="word"><dt>draining</dt><dd>When a target is being removed, the load balancer stops sending new requests but lets the current ones finish, for up to a set time. This is why a deploy does not cut off a chat mid-stream.</dd></div>
+    <div class="word"><dt>what it costs</dt><dd>About $18 a month to exist, plus a small amount per request. Up to 25 Express Mode services in one account share one, so the price is per account more than per app.</dd></div>
+  </dl>
+</section>
+
+<section id="remember">
+  <p class="remember"><b>The one sentence to remember:</b> the load balancer is the one address that never changes; ECS keeps its list of live tasks up to date, so tasks can crash, deploy and scale without anyone outside noticing.</p>
+</section>
+
+</main>
+<script>
+  const root = document.documentElement;
+  const button = document.getElementById("theme");
+  const systemDark = window.matchMedia("(prefers-color-scheme: dark)");
+  function current() { return root.dataset.theme || (systemDark.matches ? "dark" : "light"); }
+  function label() { button.textContent = current() === "dark" ? "☀ light" : "☾ dark"; }
+  button.addEventListener("click", () => {
+    const next = current() === "dark" ? "light" : "dark";
+    root.dataset.theme = next;
+    try { localStorage.setItem("course-doc-theme", next); } catch (e) {}
+    label();
+  });
+  systemDark.addEventListener("change", label);
+  label();
+</script>
+</body>
+</html>

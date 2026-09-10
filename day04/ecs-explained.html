@@ -1,0 +1,406 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>ECS, and which compute service to pick</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400;1,8..60,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    color-scheme: light;
+    --paper: #fbf8f1; --panel: #f3eee2; --card: #ffffff; --ink: #1d1a17; --muted: #6b645a; --rule: #ddd6c8;
+    --accent: #1f4e79; --accent-soft: #e4edf6; --warm: #b8562a; --warm-soft: #f6e6dc;
+    --code-bg: #1d1a17; --code-ink: #f1ebe0; --code-muted: #a39a88; --code-num: #6f675b;
+    --remember-bg: #1d1a17; --remember-ink: #fbf8f1; --remember-accent: #f3c988; --ghost: #c9c1b1;
+    --serif: "Source Serif 4", "Iowan Old Style", Charter, Georgia, serif;
+    --mono: "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --paper: #15131a; --panel: #1f1c25; --card: #1a1820; --ink: #ebe6dc; --muted: #a59d92; --rule: #383341;
+      --accent: #8fb6de; --accent-soft: #1e2a3a; --warm: #e5906a; --warm-soft: #3a2a23;
+      --code-bg: #0e0d12; --code-ink: #e9e3d8; --code-muted: #8f877c; --code-num: #5c5666;
+      --remember-bg: #ebe6dc; --remember-ink: #15131a; --remember-accent: #8a4d24; --ghost: #4a4552;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --paper: #15131a; --panel: #1f1c25; --card: #1a1820; --ink: #ebe6dc; --muted: #a59d92; --rule: #383341;
+    --accent: #8fb6de; --accent-soft: #1e2a3a; --warm: #e5906a; --warm-soft: #3a2a23;
+    --code-bg: #0e0d12; --code-ink: #e9e3d8; --code-muted: #8f877c; --code-num: #5c5666;
+    --remember-bg: #ebe6dc; --remember-ink: #15131a; --remember-accent: #8a4d24; --ghost: #4a4552;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--serif); font-size: 18px; line-height: 1.6; }
+  a { color: var(--accent); }
+
+  .mast { max-width: 880px; margin: 0 auto; padding: 56px 24px 20px; border-bottom: 2px solid var(--ink); }
+  .eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin: 0 0 14px; }
+  h1 { margin: 0 0 12px; font-size: clamp(38px, 6vw, 56px); line-height: 1.02; font-weight: 600; letter-spacing: -.015em; }
+  .sub { margin: 0; font-size: 21px; font-style: italic; color: var(--muted); max-width: 34ch; line-height: 1.4; }
+  .toc { max-width: 880px; margin: 0 auto; padding: 18px 24px 0; display: flex; flex-wrap: wrap; gap: 8px 22px; font-family: var(--mono); font-size: 12.5px; }
+  .toc a { color: var(--muted); text-decoration: none; border-bottom: 1px solid var(--rule); padding-bottom: 1px; }
+  .toc a:hover { color: var(--accent); border-color: var(--accent); }
+  .toc .theme { margin-left: auto; font: inherit; color: var(--muted); background: var(--card); border: 1px solid var(--rule); border-radius: 999px; padding: 4px 12px; cursor: pointer; }
+  .toc .theme:hover { color: var(--accent); border-color: var(--accent); }
+
+  main { max-width: 880px; margin: 0 auto; padding: 24px 24px 96px; }
+  section { padding: 44px 0 8px; border-top: 1px solid var(--rule); margin-top: 40px; }
+  section:first-of-type { border-top: 0; margin-top: 0; }
+  h2 { font-size: 30px; line-height: 1.15; font-weight: 600; margin: 0 0 18px; letter-spacing: -.01em; }
+  h2 small { display: block; font-family: var(--mono); font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); margin-bottom: 8px; font-weight: 500; }
+  h3 { font-size: 21px; margin: 26px 0 10px; }
+  p { margin: 0 0 18px; max-width: 68ch; }
+  ul { margin: 0 0 18px; padding-left: 22px; max-width: 68ch; } li { margin-bottom: 10px; }
+  li::marker { color: var(--accent); }
+  code { font-family: var(--mono); font-size: .86em; background: var(--panel); padding: 1px 6px; border-radius: 4px; }
+  .callout { background: var(--accent-soft); border-left: 4px solid var(--accent); color: var(--ink); padding: 16px 20px; margin: 24px 0; max-width: 72ch; border-radius: 0 8px 8px 0; }
+  .callout b { color: var(--accent); }
+  .callout p:last-child { margin: 0; }
+  .remember { background: var(--remember-bg); color: var(--remember-ink); padding: 28px 30px; border-radius: 12px; font-size: 24px; line-height: 1.35; font-style: italic; margin: 32px 0 0; }
+  .remember code { background: rgba(255,255,255,.14); color: inherit; }
+  .remember b { color: var(--remember-accent); font-style: normal; }
+
+  figure { margin: 26px 0 30px; }
+  figure svg { display: block; width: 100%; height: auto; max-width: 880px; }
+  figcaption { font-family: var(--mono); font-size: 12.5px; color: var(--muted); margin-top: 10px; line-height: 1.5; }
+  figcaption b { color: var(--ink); font-weight: 500; }
+  svg text { font-family: var(--serif); font-size: 15px; fill: var(--ink); }
+  svg .m { font-family: var(--mono); font-size: 12.5px; }
+  svg .s { font-size: 12.5px; fill: var(--muted); }
+  svg .box { fill: var(--card); stroke: var(--ink); stroke-width: 1.5; }
+  svg .soft { fill: var(--panel); stroke: var(--rule); stroke-width: 1.5; }
+  svg .hi { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.8; }
+  svg .warm { fill: var(--warm-soft); stroke: var(--warm); stroke-width: 1.8; }
+  svg .ln { stroke: var(--ink); stroke-width: 1.5; fill: none; }
+  svg .ln.a { stroke: var(--accent); stroke-width: 2; }
+  svg .ln.w { stroke: var(--warm); stroke-width: 2; }
+  svg .dash { stroke-dasharray: 5 5; }
+  svg .lab { font-family: var(--mono); font-size: 12px; fill: var(--accent); }
+  svg .lab.w { fill: var(--warm); }
+
+  .words { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 8px 0 18px; }
+  @media (max-width: 720px) { .words { grid-template-columns: 1fr; } }
+  .word { background: var(--card); border: 1px solid var(--rule); border-radius: 10px; padding: 16px 18px; }
+  .word dt { font-family: var(--mono); font-size: 15px; color: var(--accent); font-weight: 500; margin-bottom: 6px; }
+  .word dd { margin: 0; font-size: 16.5px; line-height: 1.5; }
+
+  pre, code, svg .m, svg .lab { font-variant-ligatures: none; }
+  pre { margin: 0; background: var(--code-bg); color: var(--code-ink); border: 1px solid var(--rule); font-family: var(--mono); font-size: 14px; line-height: 1.6; padding: 18px 20px; border-radius: 10px; white-space: pre; overflow-x: auto; }
+  pre .c { color: var(--code-muted); }
+  pre .n { display: inline-block; width: 26px; color: var(--code-num); user-select: none; }
+  pre .add { color: #8fd18f; } pre .del { color: #e89a8a; } pre .mod { color: #f3c988; }
+  .steps { list-style: none; padding: 0; margin: 22px 0 0; max-width: none; }
+  .steps li { display: grid; grid-template-columns: 54px 1fr; gap: 14px; padding: 14px 0; border-top: 1px solid var(--rule); margin: 0; align-items: start; }
+  .steps .ln-no { font-family: var(--mono); font-size: 13px; color: var(--accent); background: var(--accent-soft); border-radius: 6px; padding: 5px 0; text-align: center; margin-top: 2px; }
+  .steps p { margin: 0; max-width: none; }
+  .cmds { display: grid; grid-template-columns: 1fr; gap: 12px; margin: 8px 0 20px; }
+  .cmd { display: grid; grid-template-columns: 1fr 260px; gap: 18px; align-items: center; background: var(--card); border: 1px solid var(--rule); border-radius: 10px; padding: 12px 16px; }
+  .cmd pre { padding: 10px 14px; font-size: 13.5px; }
+  .cmd .why { font-size: 16px; line-height: 1.45; }
+  .cmd .why b { font-family: var(--mono); font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--accent); display: block; margin-bottom: 2px; }
+  @media (max-width: 720px) { .cmd { grid-template-columns: 1fr; } }
+  .mistakes { list-style: none; padding: 0; max-width: none; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 720px) { .mistakes { grid-template-columns: 1fr; } }
+  .mistakes li { background: var(--warm-soft); border-left: 4px solid var(--warm); border-radius: 0 8px 8px 0; padding: 12px 16px; margin: 0; font-size: 16.5px; line-height: 1.5; }
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 24px; font-size: 16.5px; }
+  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  th { font-family: var(--mono); font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+  td:first-child { font-weight: 600; width: 30%; }
+  table.menu { font-size: 15px; } table.menu td:first-child { width: 15%; } table.menu td { padding: 8px 8px; }
+  @media print { .toc { display: none; } section { break-inside: avoid; } }
+</style>
+<script>
+  try {
+    const saved = localStorage.getItem("course-doc-theme");
+    if (saved === "dark" || saved === "light") document.documentElement.dataset.theme = saved;
+  } catch (e) {}
+</script>
+</head>
+<body>
+
+<header class="mast">
+  <p class="eyebrow">Day 4 · DevOps &amp; MLOps for ML engineers · handout</p>
+  <h1>ECS, and which compute service to pick</h1>
+  <p class="sub">What the parts are called, what Fargate is, and how to choose between ECS, EC2, Lambda and the rest.</p>
+</header>
+<nav class="toc" aria-label="Sections">
+  <a href="#what">What ECS is</a><a href="#parts">The parts</a><a href="#launch">Fargate vs EC2</a><a href="#service">Service vs task</a><a href="#deploy">Deploying</a>
+  <a href="#express">Express Mode</a><a href="#menu">The menu</a><a href="#choose">Choosing</a><a href="#examples">Examples</a><a href="#mistakes">Mistakes</a>
+  <button class="theme" id="theme" type="button" aria-label="Switch colour theme">theme</button>
+</nav>
+
+<main>
+
+<section id="what">
+  <h2><small>01</small>What ECS is</h2>
+  <p>ECS, Elastic Container Service, runs containers for you and keeps them running. You describe what should be running: which image, how many copies, how much CPU and memory. ECS finds room for them, starts them, watches them, and replaces any that die. On Day 1 you were the thing doing all of that, by hand, on one machine.</p>
+  <figure><svg viewBox="0 0 880 250" role="img" aria-label="You hand ECS a task definition and a desired count. ECS places tasks on capacity, watches them, and replaces failed ones, keeping the running count equal to the desired count."><defs><marker id="w1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
+  <rect x="20" y="70" width="170" height="110" rx="10" class="box"/><text x="105" y="96" text-anchor="middle" font-weight="600">you say</text><text x="105" y="120" text-anchor="middle" class="s">image oracle:v2</text><text x="105" y="138" text-anchor="middle" class="s">0.5 vCPU, 1 GB, port 8000</text><text x="105" y="156" text-anchor="middle" class="s">keep 2 copies running</text>
+  <path d="M190 125 L238 125" class="ln a" marker-end="url(#w1)" style="color:var(--accent)"/>
+  <rect x="240" y="40" width="250" height="170" rx="12" class="hi"/><text x="365" y="66" text-anchor="middle" font-weight="600">ECS</text>
+  <text x="365" y="92" text-anchor="middle" class="s">finds room for 2 copies</text><text x="365" y="112" text-anchor="middle" class="s">starts them</text><text x="365" y="132" text-anchor="middle" class="s">checks their health</text><text x="365" y="152" text-anchor="middle" class="s">replaces one that dies</text><text x="365" y="172" text-anchor="middle" class="s">tells the load balancer about them</text><text x="365" y="196" text-anchor="middle" class="m" style="fill:var(--muted)">until you say otherwise</text>
+  <path d="M490 125 L528 125" class="ln a" marker-end="url(#w1)" style="color:var(--accent)"/>
+  <rect x="530" y="40" width="330" height="170" rx="12" class="soft" stroke-dasharray="6 5"/><text x="546" y="62" class="m" style="fill:var(--muted)">CAPACITY  ·  machines somewhere</text>
+  <rect x="550" y="80" width="140" height="50" rx="8" class="box"/><text x="620" y="102" text-anchor="middle" class="m">copy 1</text><text x="620" y="120" text-anchor="middle" class="s">running</text>
+  <rect x="700" y="80" width="140" height="50" rx="8" class="box"/><text x="770" y="102" text-anchor="middle" class="m">copy 2</text><text x="770" y="120" text-anchor="middle" class="s">running</text>
+  <rect x="550" y="144" width="140" height="50" rx="8" class="warm"/><text x="620" y="166" text-anchor="middle" class="m">copy 2, earlier</text><text x="620" y="184" text-anchor="middle" class="s">crashed, replaced</text>
+  <text x="440" y="238" text-anchor="middle" class="s">running count = desired count, always. That is the whole job of ECS.</text>
+</svg>
+    <figcaption><b>Figure 1.</b> ECS is the loop in the middle. Where the machines on the right come from is a separate choice, covered in section 03.</figcaption>
+  </figure>
+</section>
+
+<section id="parts">
+  <h2><small>02</small>The parts, and what each is called</h2>
+  <p>Five words cover all of ECS. Every console page, every CDK class and every error message uses them.</p>
+  <figure><svg viewBox="0 0 880 380" role="img" aria-label="A cluster contains a service. The service keeps two tasks running, each created from a task definition that lists the image, CPU, memory, port and environment. Each task contains one or more containers. Beside the service, a standalone task runs from the same or another task definition and is not kept alive."><defs><marker id="p1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
+  <rect x="20" y="60" width="220" height="150" rx="10" class="box"/><text x="130" y="86" text-anchor="middle" font-weight="600">task definition</text><text x="130" y="108" text-anchor="middle" class="s">a file, versioned: oracle:7, oracle:8</text>
+  <text x="40" y="134" class="m">image   oracle:v2</text><text x="40" y="154" class="m">cpu 512   memory 1024</text><text x="40" y="174" class="m">port 8000</text><text x="40" y="194" class="m">env DB_HOST=…  secrets …</text>
+  <path d="M240 135 L318 135" class="ln a" marker-end="url(#p1)" style="color:var(--accent)"/><text x="279" y="124" text-anchor="middle" class="lab">run it</text>
+  <rect x="320" y="20" width="540" height="340" rx="14" class="soft" stroke-dasharray="6 5"/><text x="336" y="42" class="m" style="fill:var(--muted)">CLUSTER  ·  a named group, e.g. "default"</text>
+  <rect x="340" y="60" width="330" height="200" rx="10" class="hi"/><text x="356" y="84" class="m">SERVICE  ·  oracle</text><text x="356" y="104" class="s">desired count 2 · load balanced · self-healing</text>
+  <rect x="356" y="120" width="140" height="120" rx="8" class="box"/><text x="426" y="142" text-anchor="middle" class="m">task</text><text x="426" y="160" text-anchor="middle" class="s">one running copy</text>
+  <rect x="372" y="172" width="108" height="26" rx="5" class="soft"/><text x="426" y="190" text-anchor="middle" class="s">container: Main</text>
+  <rect x="372" y="204" width="108" height="26" rx="5" class="soft" stroke-dasharray="3 3"/><text x="426" y="222" text-anchor="middle" class="s">sidecar, optional</text>
+  <rect x="514" y="120" width="140" height="120" rx="8" class="box"/><text x="584" y="142" text-anchor="middle" class="m">task</text><text x="584" y="160" text-anchor="middle" class="s">one running copy</text>
+  <rect x="530" y="172" width="108" height="26" rx="5" class="soft"/><text x="584" y="190" text-anchor="middle" class="s">container: Main</text>
+  <rect x="530" y="204" width="108" height="26" rx="5" class="soft" stroke-dasharray="3 3"/><text x="584" y="222" text-anchor="middle" class="s">sidecar, optional</text>
+  <rect x="690" y="60" width="150" height="120" rx="8" class="box" stroke-dasharray="4 3"/><text x="765" y="84" text-anchor="middle" class="m">standalone task</text><text x="765" y="104" text-anchor="middle" class="s">run once, then exits</text><text x="765" y="122" text-anchor="middle" class="s">e.g. retrain a model</text><text x="765" y="140" text-anchor="middle" class="s">no service, no</text><text x="765" y="156" text-anchor="middle" class="s">load balancer</text>
+  <path d="M240 160 C 300 300, 620 300, 690 160" class="ln dash" marker-end="url(#p1)"/><text x="470" y="318" text-anchor="middle" class="s">a task definition can also be run once, outside any service</text>
+  <text x="590" y="348" text-anchor="middle" class="s">cluster ⊃ service ⊃ tasks ⊃ containers, all made from the task definition</text>
+</svg>
+    <figcaption><b>Figure 2.</b> The Oracle on Day 3 was one cluster ("default"), one service, one task, one container, from a task definition that Express Mode wrote for us.</figcaption>
+  </figure>
+  <dl class="words">
+    <div class="word"><dt>task definition</dt><dd>A versioned file that says what to run: image, CPU, memory, ports, environment variables, secrets, log settings. It is a recipe, not a running thing. Every change makes a new revision: <code>oracle:8</code> after <code>oracle:7</code>.</dd></div>
+    <div class="word"><dt>task</dt><dd>One running copy of a task definition. It has an IP address, a start time, logs, and a life: it starts, runs, and stops. Two copies of the Oracle are two tasks.</dd></div>
+    <div class="word"><dt>container</dt><dd>What Docker runs. A task usually has one, named <code>Main</code> in Express Mode. It can have more, for example a log forwarder next to the app, called a sidecar.</dd></div>
+    <div class="word"><dt>service</dt><dd>The instruction "keep N tasks of this definition running, and connect them to this load balancer". The service is what replaces a crashed task, what scales, and what performs a deployment when the definition changes.</dd></div>
+    <div class="word"><dt>cluster</dt><dd>A named group that services and tasks belong to. It is where capacity is attached. One account can have many; the Oracle uses one called <code>default</code>.</dd></div>
+    <div class="word"><dt>capacity provider</dt><dd>Where the tasks physically run: Fargate, your own EC2 instances, or ECS Managed Instances. A cluster can have more than one. Section 03.</dd></div>
+  </dl>
+</section>
+
+<section id="launch">
+  <h2><small>03</small>Where the tasks run: Fargate, EC2, Managed Instances</h2>
+  <p>ECS decides <b>what</b> runs. Something else has to supply the machines it runs on. There are three answers, and Fargate is one of them, not a separate product.</p>
+  <figure><svg viewBox="0 0 880 330" role="img" aria-label="Three columns. Fargate: AWS supplies capacity per task, you never see a machine, you pay per task per second. EC2 launch type: you create EC2 instances, install the ECS agent, register them in the cluster, patch and scale them; tasks are packed onto them; GPUs available; you pay per instance per hour. ECS Managed Instances: AWS creates and patches EC2 instances for your cluster, any instance type including GPU; you pay per instance plus a management fee."><defs><marker id="l1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
+  <rect x="20" y="20" width="270" height="290" rx="14" class="hi"/><text x="155" y="48" text-anchor="middle" font-weight="600">Fargate</text><text x="155" y="68" text-anchor="middle" class="s">"serverless" containers</text>
+  <rect x="40" y="86" width="230" height="110" rx="8" class="box" stroke-dasharray="4 3"/><text x="155" y="106" text-anchor="middle" class="m" style="fill:var(--muted)">machines you never see</text>
+  <rect x="56" y="118" width="94" height="60" rx="6" class="soft"/><text x="103" y="144" text-anchor="middle" class="m">task</text><text x="103" y="162" text-anchor="middle" class="s">0.5 vCPU 1 GB</text>
+  <rect x="160" y="118" width="94" height="60" rx="6" class="soft"/><text x="207" y="144" text-anchor="middle" class="m">task</text><text x="207" y="162" text-anchor="middle" class="s">4 vCPU 8 GB</text>
+  <text x="155" y="222" text-anchor="middle" class="s">each task gets exactly what it asked for</text><text x="155" y="242" text-anchor="middle" class="s">billed per task, per second</text><text x="155" y="262" text-anchor="middle" class="s">no patching, no capacity planning</text><text x="155" y="290" text-anchor="middle" class="m" style="fill:var(--accent)">no GPUs</text>
+  <rect x="305" y="20" width="270" height="290" rx="14" class="soft"/><text x="440" y="48" text-anchor="middle" font-weight="600">EC2 launch type</text><text x="440" y="68" text-anchor="middle" class="s">your instances, in the cluster</text>
+  <rect x="325" y="86" width="230" height="110" rx="8" class="box"/><text x="440" y="106" text-anchor="middle" class="m">EC2 instance  g5.xlarge</text>
+  <rect x="341" y="118" width="64" height="60" rx="6" class="soft"/><text x="373" y="152" text-anchor="middle" class="m">task</text>
+  <rect x="411" y="118" width="64" height="60" rx="6" class="soft"/><text x="443" y="152" text-anchor="middle" class="m">task</text>
+  <rect x="481" y="118" width="58" height="60" rx="6" class="soft" stroke-dasharray="3 3"/><text x="510" y="146" text-anchor="middle" class="s">free</text><text x="510" y="162" text-anchor="middle" class="s">space</text>
+  <text x="440" y="222" text-anchor="middle" class="s">tasks are packed onto machines you own</text><text x="440" y="242" text-anchor="middle" class="s">billed per instance, per hour, full or empty</text><text x="440" y="262" text-anchor="middle" class="s">you patch, size and scale the instances</text><text x="440" y="290" text-anchor="middle" class="m" style="fill:var(--warm)">GPUs, any instance type</text>
+  <rect x="590" y="20" width="270" height="290" rx="14" class="soft"/><text x="725" y="48" text-anchor="middle" font-weight="600">Managed Instances</text><text x="725" y="68" text-anchor="middle" class="s">EC2 instances, run by AWS</text>
+  <rect x="610" y="86" width="230" height="110" rx="8" class="box"/><text x="725" y="106" text-anchor="middle" class="m">EC2 instance, chosen by ECS</text>
+  <rect x="626" y="118" width="64" height="60" rx="6" class="soft"/><text x="658" y="152" text-anchor="middle" class="m">task</text>
+  <rect x="696" y="118" width="64" height="60" rx="6" class="soft"/><text x="728" y="152" text-anchor="middle" class="m">task</text>
+  <rect x="766" y="118" width="58" height="60" rx="6" class="soft"/><text x="795" y="152" text-anchor="middle" class="m">task</text>
+  <text x="725" y="222" text-anchor="middle" class="s">AWS picks, launches, patches, retires them</text><text x="725" y="242" text-anchor="middle" class="s">billed per instance, plus a management fee</text><text x="725" y="262" text-anchor="middle" class="s">you choose allowed instance families</text><text x="725" y="290" text-anchor="middle" class="m" style="fill:var(--warm)">GPUs, without running EC2 yourself</text>
+</svg>
+    <figcaption><b>Figure 3.</b> Same tasks, same task definitions, same services. Only the boxes they land in differ. A cluster can mix all three.</figcaption>
+  </figure>
+  <table>
+    <tr><th>Question</th><th>Fargate</th><th>EC2 launch type</th><th>Managed Instances</th></tr>
+    <tr><td>Who owns the machine</td><td>AWS, invisible</td><td>You</td><td>AWS, visible in your account</td></tr>
+    <tr><td>Unit of billing</td><td>Task, per second</td><td>Instance, per hour</td><td>Instance, per hour, plus a fee</td></tr>
+    <tr><td>Idle cost</td><td>Only running tasks</td><td>Every instance, full or empty</td><td>Instances ECS keeps, scaled down when idle</td></tr>
+    <tr><td>GPU</td><td>No</td><td>Yes</td><td>Yes</td></tr>
+    <tr><td>Patching, agent updates</td><td>Not your problem</td><td>Yours</td><td>AWS</td></tr>
+    <tr><td>Startup of a new task</td><td>About a minute</td><td>Seconds, if an instance has room</td><td>Seconds, or minutes if a new instance is needed</td></tr>
+    <tr><td>Use it for</td><td>Web services, APIs, workers, most things</td><td>GPU inference, special hardware, very steady high load</td><td>GPU or special hardware, without an ops team</td></tr>
+  </table>
+  <div class="callout"><p><b>For ML engineers, the GPU row is the one that matters.</b> Fargate cannot give a task a GPU. A model that needs one runs on the EC2 launch type or Managed Instances with a <code>g</code> or <code>p</code> instance family, or on SageMaker, which is EC2 with the model-serving parts prebuilt. Everything else in the Oracle, the API, the agent, the small scikit-learn models, is fine on Fargate.</p></div>
+</section>
+
+<section id="service">
+  <h2><small>04</small>A service, or just a task</h2>
+  <p>The same task definition can be run in two ways, and picking the wrong one is a common early mistake.</p>
+  <figure><svg viewBox="0 0 880 300" role="img" aria-label="Top timeline: a service keeps two tasks running continuously; when one fails at 10:20, ECS starts a replacement. Bottom timeline: a standalone task started by a schedule at 02:00 runs a training job for forty minutes and exits; nothing restarts it; the next run is the next night."><defs><marker id="t1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
+  <text x="20" y="34" class="m" style="fill:var(--muted)">SERVICE  ·  the Oracle API  ·  desired count 2</text>
+  <path d="M20 120 L860 120" class="ln" style="stroke:var(--rule)" marker-end="url(#t1)"/><text x="850" y="140" text-anchor="end" class="s">time</text>
+  <rect x="20" y="50" width="840" height="24" rx="4" class="hi"/><text x="440" y="67" text-anchor="middle" class="s">task A · running all day</text>
+  <rect x="20" y="82" width="330" height="24" rx="4" class="hi"/><text x="185" y="99" text-anchor="middle" class="s">task B · running</text>
+  <rect x="350" y="82" width="30" height="24" rx="4" class="warm"/>
+  <rect x="380" y="82" width="480" height="24" rx="4" class="hi"/><text x="620" y="99" text-anchor="middle" class="s">task C · started by ECS to replace B, running</text>
+  <text x="365" y="140" text-anchor="middle" class="lab w">10:20 B crashes</text>
+  <path d="M20 170 L860 170" class="ln dash" style="stroke:var(--rule)"/>
+  <text x="20" y="200" class="m" style="fill:var(--muted)">STANDALONE TASK  ·  retrain the income model  ·  started by a schedule</text>
+  <path d="M20 280 L860 280" class="ln" style="stroke:var(--rule)" marker-end="url(#t1)"/>
+  <rect x="120" y="222" width="150" height="24" rx="4" class="box"/><text x="195" y="239" text-anchor="middle" class="s">02:00 to 02:40, exits 0</text>
+  <rect x="560" y="222" width="150" height="24" rx="4" class="box" stroke-dasharray="3 3"/><text x="635" y="239" text-anchor="middle" class="s">next night</text>
+  <text x="195" y="266" text-anchor="middle" class="s">nothing restarts it: it finished, that is success</text><text x="635" y="266" text-anchor="middle" class="s">in between: nothing running, nothing billed</text>
+</svg>
+    <figcaption><b>Figure 4.</b> A service treats an exit as a failure and starts a replacement. A standalone task treats an exit as the point. Use the wrong one and either your API keeps dying quietly or your training job runs in a loop.</figcaption>
+  </figure>
+  <table>
+    <tr><th></th><th>Service</th><th>Standalone task (RunTask)</th></tr>
+    <tr><td>Shape of the work</td><td>Never finishes: answers requests, consumes a queue</td><td>Finishes: a script that ends with exit 0</td></tr>
+    <tr><td>Exit means</td><td>Failure. ECS starts another.</td><td>Done. Nothing happens.</td></tr>
+    <tr><td>Load balancer</td><td>Usually</td><td>Never</td></tr>
+    <tr><td>Started by</td><td>You, once; ECS keeps it going</td><td>A schedule, a pipeline step, a person, or code</td></tr>
+    <tr><td>ML examples</td><td>The Oracle API, a model server, a feature service, a queue worker doing inference</td><td>Retraining, batch scoring, a data quality check, a one-off backfill</td></tr>
+  </table>
+</section>
+
+<section id="deploy">
+  <h2><small>05</small>How ECS deploys a new version</h2>
+  <p>A deployment is a service switching from one task definition revision to the next. ECS does not modify running tasks; it starts new ones and stops old ones. How it orders that is the deployment strategy, which Day 8 covers in depth. The short version:</p>
+  <figure><svg viewBox="0 0 880 250" role="img" aria-label="Rolling: new tasks from revision 8 start one at a time while revision 7 tasks stop, traffic mixing during the change. Blue/green: a full set of revision 8 tasks starts beside revision 7, traffic switches all at once, revision 7 is kept briefly for rollback. Canary: revision 8 receives a small share of traffic first, an alarm watches error rates, then all traffic moves."><defs><marker id="d1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
+  <rect x="20" y="20" width="270" height="210" rx="12" class="soft"/><text x="155" y="46" text-anchor="middle" font-weight="600">rolling</text>
+  <rect x="40" y="64" width="50" height="30" rx="4" class="box"/><text x="65" y="84" text-anchor="middle" class="s">v7</text><rect x="96" y="64" width="50" height="30" rx="4" class="box"/><text x="121" y="84" text-anchor="middle" class="s">v7</text>
+  <rect x="40" y="104" width="50" height="30" rx="4" class="hi"/><text x="65" y="124" text-anchor="middle" class="s">v8</text><rect x="96" y="104" width="50" height="30" rx="4" class="box"/><text x="121" y="124" text-anchor="middle" class="s">v7</text>
+  <rect x="40" y="144" width="50" height="30" rx="4" class="hi"/><text x="65" y="164" text-anchor="middle" class="s">v8</text><rect x="96" y="144" width="50" height="30" rx="4" class="hi"/><text x="121" y="164" text-anchor="middle" class="s">v8</text>
+  <text x="215" y="84" text-anchor="middle" class="s">step 1</text><text x="215" y="124" text-anchor="middle" class="s">step 2: mixed</text><text x="215" y="164" text-anchor="middle" class="s">step 3</text>
+  <text x="155" y="210" text-anchor="middle" class="s">cheapest; both versions serve at once for a while</text>
+  <rect x="305" y="20" width="270" height="210" rx="12" class="soft"/><text x="440" y="46" text-anchor="middle" font-weight="600">blue / green</text>
+  <rect x="325" y="64" width="50" height="30" rx="4" class="box"/><text x="350" y="84" text-anchor="middle" class="s">v7</text><rect x="381" y="64" width="50" height="30" rx="4" class="box"/><text x="406" y="84" text-anchor="middle" class="s">v7</text>
+  <rect x="325" y="104" width="50" height="30" rx="4" class="hi"/><text x="350" y="124" text-anchor="middle" class="s">v8</text><rect x="381" y="104" width="50" height="30" rx="4" class="hi"/><text x="406" y="124" text-anchor="middle" class="s">v8</text>
+  <text x="500" y="84" text-anchor="middle" class="s">100% traffic</text><text x="500" y="124" text-anchor="middle" class="s">0%, then 100%</text>
+  <text x="440" y="164" text-anchor="middle" class="s">both full sets exist; traffic flips at once</text><text x="440" y="184" text-anchor="middle" class="s">rollback = flip back</text><text x="440" y="210" text-anchor="middle" class="s">double capacity during the change</text>
+  <rect x="590" y="20" width="270" height="210" rx="12" class="soft"/><text x="725" y="46" text-anchor="middle" font-weight="600">canary  ·  Express Mode default</text>
+  <rect x="610" y="64" width="50" height="30" rx="4" class="box"/><text x="635" y="84" text-anchor="middle" class="s">v7</text><rect x="666" y="64" width="50" height="30" rx="4" class="box"/><text x="691" y="84" text-anchor="middle" class="s">v7</text>
+  <rect x="610" y="104" width="50" height="30" rx="4" class="hi"/><text x="635" y="124" text-anchor="middle" class="s">v8</text><rect x="666" y="104" width="50" height="30" rx="4" class="hi"/><text x="691" y="124" text-anchor="middle" class="s">v8</text>
+  <text x="790" y="84" text-anchor="middle" class="s">95% traffic</text><text x="790" y="124" text-anchor="middle" class="s">5%, watched</text>
+  <text x="725" y="164" text-anchor="middle" class="s">an alarm on errors decides: go to 100%</text><text x="725" y="184" text-anchor="middle" class="s">or roll back before most users saw it</text><text x="725" y="210" text-anchor="middle" class="s">slowest, safest</text>
+</svg>
+    <figcaption><b>Figure 5.</b> In all three, the old tasks keep serving until the new ones are healthy. The Day 2 pipeline did none of this: it stopped the old container, then started the new one.</figcaption>
+  </figure>
+</section>
+
+<section id="express">
+  <h2><small>06</small>Where Express Mode fits</h2>
+  <p>Express Mode is not a fourth kind of ECS. It is a form that fills in the objects above with good defaults, and adds the things around them that ECS itself does not own.</p>
+  <figure><svg viewBox="0 0 880 250" role="img" aria-label="An Express Mode form with image, port, size and health path on the left. Arrows go to the ECS objects it creates: cluster, task definition, service on Fargate. Further arrows go to things outside ECS it also creates: an application load balancer with certificate, security groups, a log group, auto scaling, and a rollback alarm."><defs><marker id="e1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
+  <rect x="20" y="70" width="180" height="110" rx="10" class="box"/><text x="110" y="96" text-anchor="middle" font-weight="600">Express Mode form</text><text x="110" y="120" text-anchor="middle" class="s">image, port, cpu, memory</text><text x="110" y="138" text-anchor="middle" class="s">health path, env, secrets</text><text x="110" y="156" text-anchor="middle" class="s">min and max tasks</text>
+  <path d="M200 110 L278 90" class="ln a" marker-end="url(#e1)" style="color:var(--accent)"/><path d="M200 140 L278 170" class="ln a" marker-end="url(#e1)" style="color:var(--accent)"/>
+  <rect x="280" y="20" width="270" height="110" rx="12" class="hi"/><text x="296" y="42" class="m" style="fill:var(--muted)">INSIDE ECS</text>
+  <rect x="296" y="54" width="110" height="30" rx="5" class="box"/><text x="351" y="74" text-anchor="middle" class="s">cluster "default"</text>
+  <rect x="416" y="54" width="120" height="30" rx="5" class="box"/><text x="476" y="74" text-anchor="middle" class="s">task definition</text>
+  <rect x="296" y="90" width="240" height="30" rx="5" class="box"/><text x="416" y="110" text-anchor="middle" class="s">service, Fargate, canary deployments</text>
+  <rect x="280" y="140" width="270" height="90" rx="12" class="soft"/><text x="296" y="162" class="m" style="fill:var(--muted)">OUTSIDE ECS, ALSO CREATED</text>
+  <text x="296" y="186" class="s">load balancer + HTTPS certificate + URL</text><text x="296" y="204" class="s">security groups · log group</text><text x="296" y="222" class="s">auto scaling policy · 5xx rollback alarm</text>
+  <path d="M550 75 L628 75" class="ln" marker-end="url(#e1)"/><path d="M550 185 L628 185" class="ln" marker-end="url(#e1)"/>
+  <rect x="630" y="40" width="230" height="170" rx="12" class="box" stroke-dasharray="6 5"/><text x="745" y="66" text-anchor="middle" font-weight="600">without Express Mode</text><text x="745" y="90" text-anchor="middle" class="s">you create each of those</text><text x="745" y="108" text-anchor="middle" class="s">yourself: about 15 resources,</text><text x="745" y="126" text-anchor="middle" class="s">or one CDK pattern construct</text><text x="745" y="150" text-anchor="middle" class="s">same objects underneath</text><text x="745" y="168" text-anchor="middle" class="s">more knobs: sidecars, EC2 capacity,</text><text x="745" y="186" text-anchor="middle" class="s">private services, your own ALB</text>
+</svg>
+    <figcaption><b>Figure 6.</b> Everything Express Mode makes is an ordinary resource you can open in its own console. When you outgrow the form, you keep the objects and drop the form.</figcaption>
+  </figure>
+</section>
+
+<section id="menu">
+  <h2><small>07</small>The menu: ways to run code on AWS</h2>
+  <p>AWS has more than one way to run a program, and the names do not say which is which. This is the whole menu, reduced to the question each one answers.</p>
+  <table class="menu">
+    <tr><th>Service</th><th>What you give it</th><th>What it gives back</th><th>Best for</th><th>Wrong for</th><th>You pay for</th></tr>
+    <tr><td>EC2</td><td>Nothing: you get a machine</td><td>A Linux box with an IP</td><td>Anything unusual: custom kernels, GPUs you manage yourself, software that needs a whole machine</td><td>Anything you would rather not patch, back up and replace yourself</td><td>Instance hours, full or idle</td></tr>
+    <tr><td>ECS on Fargate</td><td>A container image and a size</td><td>N copies kept running, behind a load balancer if you want</td><td>Web services, APIs, workers, scheduled jobs. Most things.</td><td>GPU work; anything needing host access</td><td>Task seconds</td></tr>
+    <tr><td>ECS on EC2 / Managed Instances</td><td>A container image and instance types</td><td>Same as above, on machines you can choose</td><td>GPU inference, special hardware, steady heavy load where packing tasks saves money</td><td>Small or bursty things: the instance idles</td><td>Instance hours</td></tr>
+    <tr><td>EKS</td><td>Kubernetes manifests</td><td>A managed Kubernetes control plane; nodes on EC2 or Fargate</td><td>Teams that already run Kubernetes, need its ecosystem (Helm, operators, Kubeflow), or must run the same thing on other clouds</td><td>A team with no Kubernetes experience and one app to run</td><td>$73 a month for the control plane, plus nodes</td></tr>
+    <tr><td>Lambda</td><td>A function, or a container image up to 10 GB</td><td>Runs per event, up to 15 minutes, then stops</td><td>Small, event-driven work: a webhook, an S3 trigger, a nightly 2-minute job, glue between services</td><td>Long jobs, big model loads on every cold start, streaming responses, steady high traffic</td><td>Requests and milliseconds; nothing when idle</td></tr>
+    <tr><td>AWS Batch</td><td>A container image and a job queue</td><td>Runs jobs to completion on Fargate or EC2, including GPU, with queuing and retries</td><td>Training runs, large batch scoring, anything with a queue of jobs of different sizes</td><td>Anything that serves requests</td><td>The compute it uses, per job</td></tr>
+    <tr><td>SageMaker endpoints</td><td>A model artifact, or a container that serves one</td><td>An HTTPS inference endpoint with GPU options and autoscaling</td><td>Serving a model as its own service, GPU inference, A/B between model versions</td><td>A whole application; anything that is not a model</td><td>Instance hours, with a premium over EC2</td></tr>
+    <tr><td>Elastic Beanstalk, Lightsail</td><td>Code or a container</td><td>An older, simpler platform on EC2</td><td>Existing apps already on them</td><td>New work: Express Mode does the same job with the current parts</td><td>Instance hours</td></tr>
+  </table>
+  <p>App Runner, which did the Express Mode job before, is not available in this account and is being replaced by Express Mode elsewhere; you will still see it in older articles.</p>
+</section>
+
+<section id="choose">
+  <h2><small>08</small>How to choose</h2>
+  <p>Six questions, asked in this order, get you to the right row of the table most of the time.</p>
+  <figure><svg viewBox="0 0 880 470" role="img" aria-label="Decision flow. Is the work a container? No: EC2 for a whole machine, Lambda for a small function. Yes: does it finish on its own? Yes: is it under 15 minutes and event driven? Yes: Lambda; no: standalone ECS task or AWS Batch. No, it serves continuously: does it need a GPU? Yes: SageMaker endpoint, or ECS on EC2 or Managed Instances. No: does the team already run Kubernetes? Yes: EKS. No: ECS on Fargate, starting with Express Mode."><defs><marker id="c1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
+  <rect x="310" y="14" width="260" height="44" rx="22" class="box"/><text x="440" y="41" text-anchor="middle" class="m">Is it packaged as a container?</text>
+  <path d="M310 36 L292 36" class="ln" marker-end="url(#c1)"/><text x="301" y="26" text-anchor="middle" class="lab w">no</text>
+  <rect x="40" y="8" width="250" height="56" rx="8" class="warm"/><text x="165" y="30" text-anchor="middle" class="s">EC2 if it needs a whole machine</text><text x="165" y="50" text-anchor="middle" class="s">Lambda if it is a small function</text>
+  <path d="M440 58 L440 90" class="ln" marker-end="url(#c1)"/><text x="456" y="80" class="lab">yes</text>
+  <rect x="310" y="92" width="260" height="44" rx="22" class="box"/><text x="440" y="119" text-anchor="middle" class="m">Does it finish on its own?</text>
+  <path d="M310 114 L180 114 L180 146" class="ln" marker-end="url(#c1)"/><text x="250" y="106" text-anchor="middle" class="lab">yes, it is a job</text>
+  <rect x="60" y="148" width="240" height="44" rx="22" class="box"/><text x="180" y="175" text-anchor="middle" class="m">Under 15 min, event-driven?</text>
+  <path d="M120 192 L120 224" class="ln" marker-end="url(#c1)"/><text x="136" y="214" class="lab">yes</text>
+  <rect x="40" y="226" width="160" height="44" rx="8" class="hi"/><text x="120" y="253" text-anchor="middle" class="s">Lambda</text>
+  <path d="M240 192 L240 224" class="ln" marker-end="url(#c1)"/><text x="256" y="214" class="lab w">no</text>
+  <rect x="205" y="226" width="165" height="56" rx="8" class="hi"/><text x="287" y="248" text-anchor="middle" class="s">standalone ECS task,</text><text x="287" y="266" text-anchor="middle" class="s">or AWS Batch for queues</text>
+  <path d="M440 136 L440 168" class="ln" marker-end="url(#c1)"/><text x="456" y="158" class="lab w">no, it serves</text>
+  <rect x="310" y="170" width="260" height="44" rx="22" class="box"/><text x="440" y="197" text-anchor="middle" class="m">Does it need a GPU?</text>
+  <path d="M570 192 L720 192 L720 224" class="ln" marker-end="url(#c1)"/><text x="645" y="184" text-anchor="middle" class="lab">yes</text>
+  <rect x="580" y="226" width="280" height="56" rx="8" class="hi"/><text x="720" y="248" text-anchor="middle" class="s">SageMaker endpoint for a model,</text><text x="720" y="266" text-anchor="middle" class="s">ECS on EC2 or Managed Instances for the rest</text>
+  <path d="M440 214 L440 296" class="ln" marker-end="url(#c1)"/><text x="456" y="260" class="lab w">no</text>
+  <rect x="310" y="298" width="260" height="44" rx="22" class="box"/><text x="440" y="325" text-anchor="middle" class="m">Team already runs Kubernetes?</text>
+  <path d="M570 320 L700 320 L700 352" class="ln" marker-end="url(#c1)"/><text x="635" y="312" text-anchor="middle" class="lab">yes</text>
+  <rect x="620" y="354" width="160" height="44" rx="8" class="hi"/><text x="700" y="381" text-anchor="middle" class="s">EKS</text>
+  <path d="M440 342 L440 404" class="ln" marker-end="url(#c1)"/><text x="456" y="380" class="lab w">no</text>
+  <rect x="300" y="406" width="280" height="50" rx="8" class="hi" style="stroke-width:2.5"/><text x="440" y="427" text-anchor="middle" font-weight="600">ECS on Fargate</text><text x="440" y="446" text-anchor="middle" class="s">start with Express Mode, the Oracle's home</text>
+</svg>
+    <figcaption><b>Figure 7.</b> The bottom box is the default. You leave it only when one of the questions above pushes you out.</figcaption>
+  </figure>
+
+  <h3>The six questions, in words</h3>
+  <ol class="steps">
+    <li><span class="ln-no">1</span><p><b>Shape.</b> Does it answer requests and never finish (a service), finish on its own (a job), or run once per event (a function)? This one question rules out most of the menu.</p></li>
+    <li><span class="ln-no">2</span><p><b>Duration and size.</b> Lambda stops at 15 minutes and 10 GB of memory, and reloads your model on every cold start. A job that runs for an hour, or a model that takes 30 seconds to load, is not a Lambda.</p></li>
+    <li><span class="ln-no">3</span><p><b>Hardware.</b> GPU, lots of memory, local NVMe disk, a specific CPU. Any of these takes Fargate and Lambda off the table and leaves EC2-backed options.</p></li>
+    <li><span class="ln-no">4</span><p><b>Traffic pattern.</b> Steady all day favours per-hour billing (EC2-backed). Bursty or mostly idle favours per-second (Fargate) or per-request (Lambda). A service with a minimum of one task always costs at least one task.</p></li>
+    <li><span class="ln-no">5</span><p><b>Team.</b> Who will be on call for it? Kubernetes is a skill set. EC2 patching is a chore. Fargate and Lambda remove work; they do not remove all of it.</p></li>
+    <li><span class="ln-no">6</span><p><b>Portability.</b> If it must also run on Azure or on-premises, a container is the unit that moves, and Kubernetes is the runtime that exists everywhere. Lambda code and SageMaker endpoints do not move.</p></li>
+  </ol>
+  <div class="callout"><p><b>Cost is a shape, not a number.</b> Per request (Lambda) is zero when idle and expensive when busy. Per task-second (Fargate) is flat per copy. Per instance-hour (EC2) is flat and cheapest per unit if you keep it full. Draw the traffic of your app across a day and the right billing shape is usually obvious.</p></div>
+</section>
+
+<section id="examples">
+  <h2><small>09</small>Worked examples</h2>
+  <table>
+    <tr><th>Workload</th><th>Shape</th><th>Pick</th><th>Why</th></tr>
+    <tr><td>The Oracle: API, agent, two small models</td><td>Service, bursty, no GPU</td><td>ECS on Fargate, Express Mode</td><td>Runs all day, small, no hardware needs, one team member on call</td></tr>
+    <tr><td>Retrain the income model nightly, 40 minutes on CPU</td><td>Job, scheduled</td><td>Standalone ECS task on Fargate, started by a schedule</td><td>Too long for Lambda; no queue of jobs, so Batch is more than needed</td></tr>
+    <tr><td>Fine-tune an LLM for six hours on a GPU</td><td>Job, GPU</td><td>AWS Batch on GPU instances, or SageMaker training</td><td>Needs a GPU and a queue; the instance should exist only for the run</td></tr>
+    <tr><td>Serve a 7B parameter model for chat</td><td>Service, GPU, steady</td><td>SageMaker endpoint, or ECS on Managed Instances with a g5</td><td>GPU required; steady load suits per-hour billing</td></tr>
+    <tr><td>Resize an image whenever one lands in S3</td><td>Function, per event, seconds</td><td>Lambda</td><td>Tiny, event-driven, idle most of the time</td></tr>
+    <tr><td>A queue of scoring requests, thousands a minute at 9am, none at night</td><td>Worker service, bursty</td><td>ECS on Fargate service scaled on queue depth</td><td>Scales to the queue, no GPU; Lambda would also fit if each item is quick</td></tr>
+    <tr><td>Migrate a platform that already has 40 Helm charts</td><td>Many services, existing Kubernetes</td><td>EKS</td><td>The team's knowledge and tooling is the expensive part; keep it</td></tr>
+    <tr><td>A notebook server for one data scientist</td><td>Interactive, stateful, one user</td><td>EC2, or SageMaker Studio</td><td>Needs a disk that persists and a machine you can log in to</td></tr>
+  </table>
+</section>
+
+<section id="mistakes">
+  <h2><small>10</small>Mistakes to expect</h2>
+  <ul class="mistakes">
+    <li><b>Treating Fargate as a separate service.</b> It is where ECS tasks run. Every Fargate task has a task definition, a cluster, and usually a service; you will meet all of them in the console.</li>
+    <li><b>Running a job as a service.</b> The script exits 0, ECS reads that as a crash, starts it again, and your retraining runs in a loop all night. Jobs are standalone tasks.</li>
+    <li><b>Choosing EKS because it is "the standard".</b> It is standard for teams that have it. For one application and no Kubernetes experience, it adds a control plane, a bill and a skill set for nothing.</li>
+    <li><b>Putting a model that loads in 30 seconds on Lambda.</b> Every cold start pays that 30 seconds. Users see it. A service that keeps one task warm does not.</li>
+    <li><b>Comparing EC2 and Fargate on price alone.</b> The EC2 number excludes patching, HTTPS, scaling, replacement, and the evening it breaks. Compare what each costs in your time as well.</li>
+    <li><b>Asking for a GPU on Fargate.</b> Not offered. The task definition is rejected, or the service never places a task. Use the EC2 launch type or Managed Instances.</li>
+  </ul>
+</section>
+
+<section id="remember">
+  <p class="remember"><b>The one sentence to remember:</b> ECS keeps N copies of a task definition running; Fargate is one place they can run; and for anything that is a container, serves requests, and needs no GPU, ECS on Fargate is the default and every other choice needs a reason.</p>
+</section>
+
+</main>
+<script>
+  const root = document.documentElement;
+  const button = document.getElementById("theme");
+  const systemDark = window.matchMedia("(prefers-color-scheme: dark)");
+  function current() { return root.dataset.theme || (systemDark.matches ? "dark" : "light"); }
+  function label() { button.textContent = current() === "dark" ? "☀ light" : "☾ dark"; }
+  button.addEventListener("click", () => {
+    const next = current() === "dark" ? "light" : "dark";
+    root.dataset.theme = next;
+    try { localStorage.setItem("course-doc-theme", next); } catch (e) {}
+    label();
+  });
+  systemDark.addEventListener("change", label);
+  label();
+</script>
+</body>
+</html>
