@@ -36,13 +36,14 @@ class OracleAppStack(Stack):
         vpc = ec2.Vpc(
             self,
             "Vpc",
-            availability_zones=["eu-west-2a", "eu-west-2b"],
+            availability_zones=["eu-west-2a", "eu-west-2b,"],
             nat_gateways=0,
             subnet_configuration=[
                 ec2.SubnetConfiguration(name="public", subnet_type=ec2.SubnetType.PUBLIC),
                 ec2.SubnetConfiguration(name="db", subnet_type=ec2.SubnetType.PRIVATE_ISOLATED),
             ],
         )
+        
 
         # --- 2. Database --------------------------------------------------------------------
         # A managed Postgres on the smallest instance. RDS generates the password itself and
@@ -51,7 +52,9 @@ class OracleAppStack(Stack):
         db = rds.DatabaseInstance(
             self,
             "Database",
-            engine=rds.DatabaseInstanceEngine.postgres(version=rds.PostgresEngineVersion.VER_16),
+            engine=rds.DatabaseInstanceEngine.postgres(
+                version=rds.PostgresEngineVersion.VER_16
+            ),
             instance_type=ec2.InstanceType.of(ec2.InstanceClass.T3, ec2.InstanceSize.MICRO),
             vpc=vpc,
             vpc_subnets=ec2.SubnetSelection(subnet_type=ec2.SubnetType.PRIVATE_ISOLATED),

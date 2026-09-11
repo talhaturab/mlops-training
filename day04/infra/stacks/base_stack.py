@@ -45,8 +45,18 @@ class OracleBaseStack(Stack):
             f"arn:aws:iam::{self.account}:oidc-provider/{GITHUB_OIDC_URL[8:]}",
         )
 
-        # Which repository and branch may use the role. Set in cdk.json.
-        repo = self.node.get_context("github_repo")
+        # Which repository and branch may use the role. Set in cdk.json as "owner/name".
+        owner, name = self.node.get_context("github_repo").split("/")
+
+        # The token GitHub signs names the repository in its "sub" claim. Older repositories
+        # get "repo:owner/name:ref:refs/heads/main". Repositories created since 2025 get an
+        # "immutable subject" with numeric ids, "repo:owner@123/name@456:ref:...", so that
+        # renaming the repository cannot break or hijack the trust. We accept both spellings.
+        #   check yours: gh api repos/OWNER/NAME/actions/oidc/customization/sub
+        subjects = [
+            f"repo:{owner}/{name}:ref:refs/heads/main",
+            f"repo:{owner}@*/{name}@*:ref:refs/heads/main",
+        ]
 
         # The role the pipeline assumes. The conditions are the whole security model:
         # only jobs from THIS repo on THIS branch get credentials, and they last one hour.
@@ -58,9 +68,7 @@ class OracleBaseStack(Stack):
                 provider.open_id_connect_provider_arn,
                 conditions={
                     "StringEquals": {f"{GITHUB_OIDC_URL[8:]}:aud": "sts.amazonaws.com"},
-                    "StringLike": {
-                        f"{GITHUB_OIDC_URL[8:]}:sub": f"repo:{repo}:ref:refs/heads/main"
-                    },
+                    "StringLike": {f"{GITHUB_OIDC_URL[8:]}:sub": subjects},
                 },
             ),
             description="Assumed by GitHub Actions to push images and run cdk deploy",
