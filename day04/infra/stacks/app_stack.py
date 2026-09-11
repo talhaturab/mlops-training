@@ -36,7 +36,7 @@ class OracleAppStack(Stack):
         vpc = ec2.Vpc(
             self,
             "Vpc",
-            availability_zones=["eu-west-2a", "eu-west-2b,"],
+            availability_zones=["eu-west-2a", "eu-west-2b"],
             nat_gateways=0,
             subnet_configuration=[
                 ec2.SubnetConfiguration(name="public", subnet_type=ec2.SubnetType.PUBLIC),
