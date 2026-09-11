@@ -242,10 +242,14 @@
     conditions={
         "StringEquals": {"token.actions.githubusercontent.com:aud": "sts.amazonaws.com"},
         "StringLike": {
-            "token.actions.githubusercontent.com:sub": "repo:talhaturab/mlops-training:ref:refs/heads/main"
+            "token.actions.githubusercontent.com:sub": [
+                "repo:talhaturab/mlops-training:ref:refs/heads/main",
+                "repo:talhaturab@*/mlops-training@*:ref:refs/heads/main",
+            ]
         },
     },
 )</pre>
+  <p>Two spellings of the same repository. Repositories created since 2025 get an "immutable subject": GitHub puts numeric ids after the owner and the name, so renaming the repository cannot break or hijack the trust. Older repositories use the plain form. Check which yours uses with <code>gh api repos/OWNER/NAME/actions/oidc/customization/sub</code>.</p>
   <div class="callout"><p><b>What the role may do.</b> Push to the one repository, and switch into the roles that <code>cdk bootstrap</code> created. CDK never deploys as the GitHub role directly. It hands the template to CloudFormation, which runs as a bootstrap role. So the GitHub role's own permissions stay short.</p></div>
 </section>
 
@@ -400,8 +404,8 @@
 <section id="mistakes">
   <h2><small>12</small>Mistakes to expect</h2>
   <ul class="mistakes">
-    <li><b>"Not authorized to perform sts:AssumeRoleWithWebIdentity".</b> The trust condition did not match. Check the repository name in <code>cdk.json</code> and that the workflow ran on main, not on a branch.</li>
-    <li><b>"OIDC provider already exists".</b> An account can have one provider for GitHub. If someone made one before, import it with <code>OpenIdConnectProvider.from_open_id_connect_provider_arn</code> instead of creating it.</li>
+    <li><b>"Not authorized to perform sts:AssumeRoleWithWebIdentity".</b> The trust condition did not match. Check the repository name in <code>cdk.json</code>, that the workflow ran on main, not on a branch, and whether GitHub gives your repository the immutable subject with numeric ids (section 04).</li>
+    <li><b>"OIDC provider already exists".</b> An account can have one provider for GitHub. This account already had one from another project, so the base stack imports it with <code>OpenIdConnectProvider.from_open_id_connect_provider_arn</code> instead of creating it.</li>
     <li><b>The first deploy fails on the service.</b> ECS cannot start an image that is not in ECR yet. The pipeline pushes before it deploys; a manual first deploy needs a pushed image with the tag you pass.</li>
     <li><b>Secret not found: oracle/openrouter.</b> Step 5 was skipped, or done in another region. The stack refers to the secret by name and expects it in eu-west-2.</li>
     <li><b>Two pipelines deploy the same merge.</b> The Day 2 workflow still runs on the same paths and still updates the EC2 server. Disable one when you no longer teach with it.</li>
